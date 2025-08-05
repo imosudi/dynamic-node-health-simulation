@@ -1,2 +1,74 @@
-# dynamic-node-health-simulation
-Modular Python framework for dynamic node health scoring and probabilistic fault injection in fog networks. Models fog node integrity in smart agriculture using real-time metrics, EMA thresholding, and health classification. Features fault injection, adaptive scoring, simulation control, and live visualization. Exports logs in JSON/CSV for analysis
+# Dynamic Node Health Simulation
+
+A Modular Python Simulation Framework for Dynamic Node Health Scoring and Probabilistic Fault Injection in Fog Computing Networks.
+
+## 📋 Overview
+This project simulates node health degradation in a hierarchical fog computing network deployed in a smart agricultural farm. It models behaviour metrics like Packet Loss Rate (PLR), CPU Usage, and Response Time (RTT), introducing dynamic fault injection and adaptive health thresholding using Exponential Moving Average (EMA). 
+
+## 🎯 Features
+- Node-specific behaviour metric profiles (PLR, CPU, RTT)
+- Time-varying probabilistic fault injection (stress scenarios)
+- Adaptive thresholding with EMA
+- Health status classification (Good, Fair, Poor, Faulty)
+- CLI-based simulation execution
+- Live visualisation of node health vs thresholds (per node subplots)
+- Persistent log export (CSV & JSON)
+
+## 🗂️ Project Structure
+```
+/data/                   --> Auto-generated node_list.csv
+/logs/                   --> Simulation logs and plot outputs
+/modules/                --> Core simulation modules
+    ├── sample_data_generator.py
+    ├── node_profile.py
+    ├── fault_injector.py
+    ├── health_scorer.py
+    ├── adaptive_threshold.py
+    ├── health_classifier.py
+    ├── simulation_controller.py
+    └── live_plotter.py
+main.py                   --> CLI Entry Point
+```
+
+## 🚀 Quick Start
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/yourusername/dynamic-node-health-simulation.git
+cd dynamic-node-health-simulation
+```
+
+### 2. Setup Python Environment
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 3. Run Simulation
+```bash
+python main.py
+```
+
+### 4. Output
+- Logs: `logs/node_health_log.json` and `logs/node_health_log.csv`
+- Visual: `logs/simulation_plot.png`
+
+## 🛠️ Configuration Notes
+- The simulation autogenerates sample node profiles if `data/node_list.csv` is missing.
+- Behaviour metric profiles can be tailored in `sample_data_generator.py` or loaded from custom CSVs.
+- Fault scenarios and probabilities will be configurable via YAML templates in future versions.
+
+## 📊 Use Cases
+- Fog/Edge network resilience testing
+- CPS anomaly detection simulations
+- Smart agriculture network performance modelling
+- Academic research in fault-tolerant distributed systems
+
+## 🧪 Future Enhancements
+- Scenario-based YAML configurations
+- Layer-specific fault models (energy depletion, load stress)
+- Integration with real-time sensor emulators
+
+## 📝 License
+MIT License
