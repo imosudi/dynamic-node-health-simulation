@@ -69,6 +69,3 @@ python main.py
 - Scenario-based YAML configurations
 - Layer-specific fault models (energy depletion, load stress)
 - Integration with real-time sensor emulators
-
-## 📝 License
-MIT License
