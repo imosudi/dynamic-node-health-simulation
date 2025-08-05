@@ -1,9 +1,9 @@
 # Dynamic Node Health Simulation
 
-A Modular Python Simulation Framework for Dynamic Node Health Scoring and Probabilistic Fault Injection in Fog Computing Networks.
+A Modular Python Simulation Framework for Dynamic Node Health Scoring and Probabilistic Fault Injection in Fog Computing Networks. 
 
 ## 📋 Overview
-This project simulates node health degradation in a hierarchical fog computing network deployed in a smart agricultural farm. It models behaviour metrics like Packet Loss Rate (PLR), CPU Usage, and Response Time (RTT), introducing dynamic fault injection and adaptive health thresholding using Exponential Moving Average (EMA). 
+This project simulates node health degradation in a hierarchical fog computing network deployed in a smart agricultural farm. It models behaviour metrics like Packet Loss Rate (PLR), CPU Usage, and Response Time (RTT), introducing dynamic fault injection, adaptive health thresholding, simulation control, and live visualization. Exports logs in JSON/CSV for analysis using Exponential Moving Average (EMA). 
 
 ## 🎯 Features
 - Node-specific behaviour metric profiles (PLR, CPU, RTT)
