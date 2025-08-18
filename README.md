@@ -19,11 +19,9 @@ This project simulates node health degradation in a hierarchical fog computing n
 dynamic-node-health-simulation/
 ├── data                            --> Auto-generated node_list.csv
 │   └── node_list.csv
-├── LICENSE
 ├── logs                            --> Simulation logs and plot outputs
 │   ├── node_health_log.csv
 │   └── node_health_log.json
-├── main.py                         --> CLI Entry Point
 ├── modules                         --> Core simulation modules
 │   ├── adaptive_threshold.py
 │   ├── fault_injector.py
@@ -33,6 +31,8 @@ dynamic-node-health-simulation/
 │   ├── node_profile.py
 │   ├── sample_data_generator.py
 │   └── simulation_controller.py
+├── main.py                         --> CLI Entry Point
+├── LICENSE
 └── README.md
 
 
