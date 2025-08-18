@@ -2,10 +2,10 @@
 
 A Modular Python Simulation Framework for Dynamic Node Health Scoring and Probabilistic Fault Injection in Fog Computing Networks. 
 
-## 📋 Overview
+## Overview
 This project simulates node health degradation in a hierarchical fog computing network deployed in a smart agricultural farm. It models behaviour metrics like Packet Loss Rate (PLR), CPU Usage, and Response Time (RTT), introducing dynamic fault injection, adaptive health thresholding, simulation control, and live visualization. Exports logs in JSON/CSV for analysis using Exponential Moving Average (EMA). 
 
-## 🎯 Features
+## Features
 - Node-specific behaviour metric profiles (PLR, CPU, RTT)
 - Time-varying probabilistic fault injection (stress scenarios)
 - Adaptive thresholding with EMA
@@ -14,23 +14,31 @@ This project simulates node health degradation in a hierarchical fog computing n
 - Live visualisation of node health vs thresholds (per node subplots)
 - Persistent log export (CSV & JSON)
 
-## 🗂️ Project Structure
+## Project Structure
 ```
-/data/                   --> Auto-generated node_list.csv
-/logs/                   --> Simulation logs and plot outputs
-/modules/                --> Core simulation modules
-    ├── sample_data_generator.py
-    ├── node_profile.py
-    ├── fault_injector.py
-    ├── health_scorer.py
-    ├── adaptive_threshold.py
-    ├── health_classifier.py
-    ├── simulation_controller.py
-    └── live_plotter.py
-main.py                   --> CLI Entry Point
+dynamic-node-health-simulation/
+├── data                            --> Auto-generated node_list.csv
+│   └── node_list.csv
+├── LICENSE
+├── logs                            --> Simulation logs and plot outputs
+│   ├── node_health_log.csv
+│   └── node_health_log.json
+├── main.py                         --> CLI Entry Point
+├── modules                         --> Core simulation modules
+│   ├── adaptive_threshold.py
+│   ├── fault_injector.py
+│   ├── health_classifier.py
+│   ├── health_scorer.py
+│   ├── live_plotter.py
+│   ├── node_profile.py
+│   ├── sample_data_generator.py
+│   └── simulation_controller.py
+└── README.md
+
+
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone Repository
 ```bash
@@ -54,18 +62,18 @@ python main.py
 - Logs: `logs/node_health_log.json` and `logs/node_health_log.csv`
 - Visual: `logs/simulation_plot.png`
 
-## 🛠️ Configuration Notes
+## Configuration Notes
 - The simulation autogenerates sample node profiles if `data/node_list.csv` is missing.
 - Behaviour metric profiles can be tailored in `sample_data_generator.py` or loaded from custom CSVs.
 - Fault scenarios and probabilities will be configurable via YAML templates in future versions.
 
-## 📊 Use Cases
+## Use Cases
 - Fog/Edge network resilience testing
 - CPS anomaly detection simulations
 - Smart agriculture network performance modelling
 - Academic research in fault-tolerant distributed systems
 
-## 🧪 Future Enhancements
+## Future Enhancements
 - Scenario-based YAML configurations
 - Layer-specific fault models (energy depletion, load stress)
 - Integration with real-time sensor emulators
