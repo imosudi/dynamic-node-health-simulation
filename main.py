@@ -1,41 +1,19 @@
-import os
-from modules.sample_data_generator import generate_sample_node_list_csv
-from modules.node_profile import NodeProfile
-from modules.fault_injector import FaultInjector
-from modules.health_scorer import HealthScorer
-from modules.adaptive_threshold import AdaptiveThreshold
-from modules.health_classifier import HealthClassifier
-from modules.simulation_controller import SimulationController
-from modules.live_plotter import LivePlotter
+from fault_injection.fault_injection_sim import run_complete_simulation
 
-def main():
-    node_list_csv = 'data/node_list.csv'
+#baseline_values = {'cpu': 0.2, 'rtt': 100, 'plr': 0.01}
+#baseline_values = {'cpu': 0.2, 'rtt': 30, 'plr': 0.01}
+#baseline_values = {"cpu":0.145, "rtt":26.4, "plr":0.0084}
 
-    # Generate sample node_list.csv if it doesn't exist
-    if not os.path.exists(node_list_csv):
-        print(f"{node_list_csv} not found. Generating sample data...")
-        generate_sample_node_list_csv(node_list_csv)
-        print(f"Sample node_list.csv generated successfully.")
+baseline_values = {"cpu":0.090, "rtt":22.8, "plr":0.0068}
 
-    # Load Node Profiles
-    node_profiles = NodeProfile.load_profiles_from_csv(node_list_csv)
-
-    # Initialize Modules
-    fault_injector = FaultInjector(severity_multipliers={'PLR': 3, 'CPU': 2, 'RTT': 1.5})
-    health_scorer = HealthScorer()
-    adaptive_threshold = AdaptiveThreshold(alpha=0.4)
-    health_classifier = HealthClassifier()
-    live_plotter = LivePlotter()
-
-    # Run Simulation
-    controller = SimulationController(node_profiles, fault_injector, health_scorer, adaptive_threshold, health_classifier)
-    controller.run_simulation(total_timesteps=100)
-
-    # Export Logs
-    controller.export_logs('logs/node_health_log.json', 'logs/node_health_log.csv')
-
-    # Plot Results
-    live_plotter.plot_simulation_results(controller.simulation_log, node_profiles)
-
-if __name__ == "__main__":
-    main()
+try:
+        # Run simulation
+        results, injector = run_complete_simulation(baseline_values, steps=1, seed=10)
+        print(f"\nSimulation completed successfully!")
+        print(f"Total steps: {len(results)}")
+        print(f"Fault periods: {sum(1 for r in results if r['any_fault_active'])}")
+        
+except Exception as e:
+        print(f"Error during simulation: {e}")
+        import traceback
+        traceback.print_exc()

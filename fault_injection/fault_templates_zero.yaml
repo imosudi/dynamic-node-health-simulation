@@ -1,0 +1,203 @@
+# ZERO-FAULT YAML WITH CORRELATED STOCHASTIC METRICS
+# All occurrence probabilities set to 0.0, but covariance structures preserved
+# for realistic correlated metric behavior without fault injection
+
+fault_templates:
+  - id: baseline_correlation
+    name: baseline_correlated_behavior
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [0.0, 0.0, 0.0]  # Zero severity - no actual fault
+    covariance:
+      rho: 0.6
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always "occurs" but with zero severity
+    duration_dist:
+      type: deterministic
+      n_steps: 1  # Single step duration
+    note: "Baseline correlated metric behavior without actual faults"
+
+  - id: natural_variation_rtt_cpu
+    name: natural_rtt_cpu_correlation
+    type: additive
+    affected_metrics: [0,1]
+    severity_vector: [0.0, 0.0]  # Zero severity
+    covariance:
+      rho: 0.4
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always active
+    duration_dist:
+      type: deterministic
+      n_steps: 1
+    note: "Natural RTT-CPU correlation without fault injection"
+
+  - id: natural_variation_cpu_plr
+    name: natural_cpu_plr_correlation
+    type: additive
+    affected_metrics: [1,2]
+    severity_vector: [0.0, 0.0]  # Zero severity
+    covariance:
+      rho: 0.3
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always active
+    duration_dist:
+      type: deterministic
+      n_steps: 1
+    note: "Natural CPU-PLR correlation without fault injection"
+
+  - id: natural_variation_rtt_plr
+    name: natural_rtt_plr_correlation
+    type: additive
+    affected_metrics: [0,2]
+    severity_vector: [0.0, 0.0]  # Zero severity
+    covariance:
+      rho: 0.5
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always active
+    duration_dist:
+      type: deterministic
+      n_steps: 1
+    note: "Natural RTT-PLR correlation without fault injection"
+
+# Original fault templates with zero occurrence probability
+# (Preserved for reference but disabled)
+  - id: correlated_power
+    name: correlated_power_loss
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [2.0, 2.5, 1.8]
+    covariance:
+      rho: 0.8
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 0.0  # Disabled
+    duration_dist:
+      type: geometric
+      p: 0.05
+    note: "DISABLED - High-correlation multi-metric disturbance"
+
+  - id: transient_glitch
+    name: transient_glitch
+    type: additive
+    affected_metrics: [0]
+    severity_vector: [3.0]
+    occurrence_model:
+      type: bernoulli
+      p: 0.0  # Disabled
+    duration_dist:
+      type: geometric
+      p: 0.2
+    note: "DISABLED - Short transient spike in RTT"
+
+  - id: intermittent_dropout
+    name: intermittent_dropout
+    type: persistent
+    subtype: additive_persistent
+    affected_metrics: [0]
+    severity_vector: [1.5]
+    occurrence_model:
+      type: bernoulli
+      p: 0.0  # Disabled
+    duration_dist:
+      type: geometric
+      p: 0.15
+    note: "DISABLED - Intermittent RTT dropout"
+
+  - id: random_noise_burst
+    name: random_noise_burst
+    type: additive
+    affected_metrics: [2]
+    severity_vector: [2.5]
+    occurrence_model:
+      type: bernoulli
+      p: 0.0  # Disabled
+    duration_dist:
+      type: geometric
+      p: 0.25
+    note: "DISABLED - Burst of random noise in PLR"
+
+  - id: short_spike
+    name: short_spike
+    type: additive
+    affected_metrics: [1]
+    severity_vector: [4.0]
+    occurrence_model:
+      type: bernoulli     
+      p: 0.0  # Disabled
+    duration_dist:
+      type: geometric
+      p: 0.3
+    note: "DISABLED - Very short CPU spike"
+
+  - id: multi_metric_event
+    name: multi_metric_event
+    type: additive
+    affected_metrics: [0,2]
+    severity_vector: [2.0, 1.5]
+    covariance:
+      rho: 0.6
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 0.0  # Disabled
+    duration_dist:  
+      type: geometric
+      p: 0.1
+    note: "DISABLED - Event affecting RTT and PLR with moderate correlation"
+
+  - id: low_correlation_event
+    name: low_correlation_event
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [1.5, 1.0, 2.0]
+    covariance:
+      rho: 0.3
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli   
+      p: 0.0  # Disabled
+    duration_dist:
+      type: geometric
+      p: 0.15
+    note: "DISABLED - Event with low correlation across RTT, CPU, PLR"
+
+  - id: medium_correlation_event
+    name: medium_correlation_event
+    type: additive
+    affected_metrics: [0,1]
+    severity_vector: [2.0, 2.5]
+    covariance:
+      rho: 0.5
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 0.0  # Disabled
+    duration_dist:
+      type: geometric     
+      p: 0.1
+    note: "DISABLED - Event with medium correlation across RTT and CPU"
+
+  - id: high_correlation_event
+    name: high_correlation_event
+    type: additive
+    affected_metrics: [1,2]
+    severity_vector: [3.0, 2.0]
+    covariance:
+      rho: 0.7
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 0.0  # Disabled
+    duration_dist:
+      type: geometric
+      p: 0.05
+    note: "DISABLED - High correlation CPU+PLR event"

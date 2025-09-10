@@ -1,0 +1,213 @@
+
+fault_templates:
+  - id: correlated_power
+    name: correlated_power_loss
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [2.0, 2.5, 1.8]
+    covariance:
+      rho: 0.8
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 0.0005
+    duration_dist:
+      type: geometric
+      p: 0.05
+    note: "High-correlation multi-metric disturbance"
+
+  - id: persistent_sensor
+    name: sensor_stuck_or_drift
+    type: persistent
+    subtype: stuck_at
+    affected_metrics: [1]
+    stuck_value: max_value
+    duration_dist:
+      type: deterministic
+      n_steps: 500
+    occurrence_model:
+      type: bernoulli
+      p: 0.0001
+    repeatable: true
+    note: "Long lasting CPU stuck sensor"
+
+  - id: transient_glitch
+    name: transient_glitch
+    type: additive
+    affected_metrics: [0]
+    severity_vector: [3.0]
+    occurrence_model:
+      type: bernoulli
+      p: 0.01
+    duration_dist:
+      type: geometric
+      p: 0.2
+    note: "Short transient spike in RTT"
+
+  - id: ramp_drift
+    name: ramp_drift
+    type: persistent
+    subtype: ramp
+    affected_metrics: [2]
+    ramp_slope: 0.05
+    max_deviation: 5.0
+    duration_dist:
+      type: geometric
+      p: 0.1      
+    occurrence_model:
+      type: bernoulli
+      p: 0.0002
+    repeatable: true
+    note: "Gradual PLR ramp drift"
+
+  - id: intermittent_dropout
+    name: intermittent_dropout
+    type: persistent
+    subtype: additive_persistent
+    affected_metrics: [0]
+    severity_vector: [1.5]
+    duration_dist:
+      type: geometric
+      p: 0.15
+    occurrence_model:
+      type: bernoulli
+      p: 0.005
+    repeatable: true
+    note: "Intermittent RTT dropout"
+
+  - id: multi_metric_event
+    name: multi_metric_event
+    type: additive
+    affected_metrics: [0,2]
+    severity_vector: [2.0, 1.5]
+    covariance:
+      rho: 0.6
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 0.0003
+    duration_dist:  
+      type: geometric
+      p: 0.1
+    note: "Event affecting RTT and PLR with moderate correlation"
+
+  - id: short_spike
+    name: short_spike
+    type: additive
+    affected_metrics: [1]
+    severity_vector: [4.0]
+    occurrence_model:
+      type: bernoulli     
+      p: 0.02
+    duration_dist:
+      type: geometric
+      p: 0.3
+    note: "Very short CPU spike"
+
+  - id: long_drift
+    name: long_drift
+    type: persistent
+    subtype: ramp
+    affected_metrics: [0]
+    ramp_slope: 0.02
+    max_deviation: 3.0
+    duration_dist:
+      type: geometric
+      p: 0.05
+    occurrence_model:
+      type: bernoulli
+      p: 0.0001
+    repeatable: true
+    note: "Slow long-term RTT drift"
+
+  - id: random_noise_burst
+    name: random_noise_burst
+    type: additive
+    affected_metrics: [2]
+    severity_vector: [2.5]
+    occurrence_model:
+      type: bernoulli
+      p: 0.01
+    duration_dist:
+      type: geometric
+      p: 0.25
+    note: "Burst of random noise in PLR"
+
+  - id: complete_failure
+    name: complete_failure
+    type: persistent
+    subtype: stuck_at
+    affected_metrics: [1]
+    stuck_value: 0.0
+    duration_dist:
+      type: deterministic
+      n_steps: 1000
+    occurrence_model:
+      type: bernoulli
+      p: 0.00005
+    repeatable: false
+    note: "Complete CPU failure stuck at zero"
+
+  - id: low_correlation_event
+    name: low_correlation_event
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [1.5, 1.0, 2.0]
+    covariance:
+      rho: 0.3
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli   
+      p: 0.0007
+    duration_dist:
+      type: geometric
+      p: 0.15
+    note: "Event with low correlation across RTT, CPU, PLR"
+
+  - id: medium_correlation_event
+    name: medium_correlation_event
+    type: additive
+    affected_metrics: [0,1]
+    severity_vector: [2.0, 2.5]
+    covariance:
+      rho: 0.5
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 0.0004
+    duration_dist:
+      type: geometric     
+      p: 0.1
+    note: "Event with medium correlation across RTT and CPU"
+
+  - id: high_correlation_event
+    name: high_correlation_event
+    type: additive
+    affected_metrics: [1,2]
+    severity_vector: [3.0, 2.0]
+    covariance:
+      rho: 0.7
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 0.0002
+    duration_dist:
+      type: geometric
+      p: 0.05
+    note: "High correlation CPU+PLR event"
+
+  - id: extreme_event
+    name: extreme_event
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [4.0, 3.5, 4.5]
+    covariance: 
+      rho: 0.9
+      mode: pairwise_rho        
+    occurrence_model:
+      type: bernoulli
+      p: 0.0001       
+    duration_dist:  
+      type: geometric
+      p: 0.02
+    note: "Rare extreme event affecting RTT, CPU, PLR"
