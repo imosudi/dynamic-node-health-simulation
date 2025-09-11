@@ -288,8 +288,49 @@ class YAMLFaultInjector:
             'any_active': len(active_faults) > 0
         }
 
-
 def analyse_fault_impact(results: List[Dict], baseline_values: Dict[str, float]):
+    """Analyse the impact of fault injection on metrics.
+       Always returns analysis data, even if no faults are detected.
+    """
+    print("\n" + "="*50)
+    print("FAULT IMPACT ANALYSIS")
+    print("="*50)
+    
+    normal_periods = [r for r in results if not r['any_fault_active']]
+    fault_periods = [r for r in results if r['any_fault_active']]
+    
+    print(f"Baseline values: {baseline_values}")
+    print(f"Normal period samples: {len(normal_periods)}")
+    print(f"Fault period samples: {len(fault_periods)}")
+    
+    data_retuned = {}
+    for metric in ['cpu', 'rtt', 'plr']:
+        normal_vals = [r[metric] for r in normal_periods] if normal_periods else [baseline_values[metric]]
+        fault_vals = [r[metric] for r in fault_periods] if fault_periods else normal_vals
+        
+        normal_mean = np.mean(normal_vals)
+        fault_mean = np.mean(fault_vals)
+        
+        # If no fault periods, impact is zero
+        impact_percent = ((fault_mean - normal_mean) / normal_mean) * 100 if normal_mean != 0 else 0.0
+        
+        print(f"\n{metric.upper()}:")
+        print(f"  Normal: μ={normal_mean:.4f}")
+        print(f"  Fault:  μ={fault_mean:.4f}")
+        print(f"  Impact: {impact_percent:+.4f}% change")
+        
+        metric_data = {
+            "Normal": {"μ": round(float(normal_mean), 4)},
+            "Fault": {"μ": round(float(fault_mean), 4)},
+            "Impact": round(float(impact_percent), 4)
+        }
+        print(metric_data)
+        data_retuned[metric] = metric_data
+    
+    return data_retuned
+
+
+def analyse_fault_impact_old(results: List[Dict], baseline_values: Dict[str, float]):
     """Analyse the impact of fault injection on metrics."""
     print("\n" + "="*50)
     print("FAULT IMPACT ANALYSIS")
