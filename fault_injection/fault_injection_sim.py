@@ -289,8 +289,8 @@ class YAMLFaultInjector:
         }
 
 
-def analyze_fault_impact(results: List[Dict], baseline_values: Dict[str, float]):
-    """Analyze the impact of fault injection on metrics."""
+def analyse_fault_impact(results: List[Dict], baseline_values: Dict[str, float]):
+    """Analyse the impact of fault injection on metrics."""
     print("\n" + "="*50)
     print("FAULT IMPACT ANALYSIS")
     print("="*50)
@@ -305,7 +305,7 @@ def analyze_fault_impact(results: List[Dict], baseline_values: Dict[str, float])
     print(f"Baseline values: {baseline_values}")
     print(f"Normal period samples: {len(normal_periods)}")
     print(f"Fault period samples: {len(fault_periods)}")
-    
+    data_retuned = {}
     for metric in ['cpu', 'rtt', 'plr']:
         normal_vals = [r[metric] for r in normal_periods]
         fault_vals = [r[metric] for r in fault_periods]
@@ -317,7 +317,30 @@ def analyze_fault_impact(results: List[Dict], baseline_values: Dict[str, float])
         print(f"\n{metric.upper()}:")
         print(f"  Normal: μ={normal_mean:.4f}")
         print(f"  Fault:  μ={fault_mean:.4f}")
-        print(f"  Impact: {impact_percent:+.1f}% change")
+        print(f"  Impact: {impact_percent:+.4f}% change")
+        print(
+            {
+                str(metric): {
+                    "Normal": {
+                    "μ":round(normal_mean, 4)
+                    },
+                    "Fault": {
+                    "μ":round(fault_mean, 4)
+                    },
+                     "Impact":round(impact_percent, 4)
+                }
+            }
+        )
+        data_retuned[str(metric)] = {
+                    "Normal": {
+                        "μ": round(float(normal_mean), 4)
+                    },
+                    "Fault": {
+                        "μ": round(float(fault_mean), 4)
+                    },
+                    "Impact": round(float(impact_percent), 4)
+                }
+    return data_retuned
 
 
 def detect_anomalies(results: List[Dict], baseline_values: Dict[str, float], 
@@ -490,19 +513,13 @@ def create_detailed_visualisation(results: List[Dict], metric_names: List[str], 
     print(f"\nDetailed plot saved as 'fault_injection_detailed_analysis.png'")
     plt.close()
     
-def run_complete_simulation(baseline_values:dict, steps: int, seed: int):
+def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, seed: int):
     """Run complete simulation with YAML-based fault configuration."""
     print("Starting YAML-based Fault Injection Simulation...")
     print("="*50)
     
     # Setup
     metric_names = ["cpu", "rtt", "plr"]
-    #baseline_values = {'cpu': 0.2, 'rtt': 100, 'plr': 0.01}
-    #baseline_values = {'cpu': 0.2, 'rtt': 30, 'plr': 0.01}
-    #baseline_values = {"cpu":0.145, "rtt":26.4, "plr":0.0084}
-    #baseline_values = {"cpu":0.090, "rtt":22.8, "plr":0.0068}
-    #max_values = {'cpu': 1.0, 'rtt': 500, 'plr': 0.5}  # Maximum reasonable values
-    max_values = {'cpu': 0.75, 'rtt': 150, 'plr': 0.5}  
     
     gen = MetricGenerator(
         metric_names, 
@@ -513,7 +530,8 @@ def run_complete_simulation(baseline_values:dict, steps: int, seed: int):
     
     # Create YAML-based fault injector
     injector = YAMLFaultInjector(
-        'fault_injection/fault_templates_zero.yaml',  # Path to YAML config file
+        'fault_injection/fault_templates_zero.yaml',
+        #'fault_injection/templates.yaml',  
         metric_names,
         baseline_values,
         max_values,
@@ -547,12 +565,13 @@ def run_complete_simulation(baseline_values:dict, steps: int, seed: int):
         if status['any_active']:
             print(f"t={t:2d}: cpu={observed[0]:.3f}, rtt={observed[1]:.1f}, "
                   f"plr={observed[2]:.4f}, faults={[f['fault_name'] for f in status['active_faults']]}")
+            print("\n⚠️ Fault detected — stopping simulation early.\n"); break 
         else:
             print(f"t={t:2d}: cpu={observed[0]:.3f}, rtt={observed[1]:.1f}, "
                   f"plr={observed[2]:.4f}, no faults")
     
     # Analysis
-    analyze_fault_impact(results, baseline_values)
+    analyse_fault_impact(results, baseline_values)
     detect_anomalies(results, baseline_values, threshold_config)
     create_visualisation(results, metric_names, baseline_values)
     #create_detailed_visualisation(results, metric_names, baseline_values)
@@ -570,7 +589,7 @@ def run_complete_simulation(baseline_values:dict, steps: int, seed: int):
     if not injector.fault_history:
         print("No faults occurred during simulation")
     
-    return results, injector
+    return results, injector, analyse_fault_impact(results, baseline_values)
 
 
 """if __name__ == "__main__":
