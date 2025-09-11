@@ -1,4 +1,3 @@
-#Create a version of this YAML that inject zero faults for testing purposes.
 # YAML that maps to RTT(0), CPU(1), PLR(2)
 fault_templates:
   - id: correlated_power

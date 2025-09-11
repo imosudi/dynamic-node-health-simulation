@@ -554,7 +554,7 @@ def create_detailed_visualisation(results: List[Dict], metric_names: List[str], 
     print(f"\nDetailed plot saved as 'fault_injection_detailed_analysis.png'")
     plt.close()
     
-def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, seed: int):
+def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, seed: int, fault_templates: str) -> Tuple[List[Dict], YAMLFaultInjector, Dict]:
     """Run complete simulation with YAML-based fault configuration."""
     print("Starting YAML-based Fault Injection Simulation...")
     print("="*50)
@@ -570,9 +570,7 @@ def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, s
     )
     
     # Create YAML-based fault injector
-    injector = YAMLFaultInjector(
-        'fault_injection/fault_templates_zero.yaml',
-        #'fault_injection/templates.yaml',  
+    injector = YAMLFaultInjector(fault_templates,
         metric_names,
         baseline_values,
         max_values,
