@@ -30,7 +30,6 @@ class DurationDistribution(Enum):
     GEOMETRIC = "geometric"
     DETERMINISTIC = "deterministic"
 
-
 class MetricGenerator:
     def __init__(self, metric_names: List[str], baselines: List[float], 
                  noise_levels: List[float], seed: Optional[int], 
@@ -44,7 +43,6 @@ class MetricGenerator:
     def step(self) -> np.ndarray:
         noise = self.rng.normal(0, self.noise_levels)
         return self.baselines + noise
-
 
 def create_valid_covariance_matrix(variances: List[float], correlations: List[List[float]]) -> np.ndarray:
     """Create a valid covariance matrix from variances and correlations."""
@@ -62,7 +60,6 @@ def create_valid_covariance_matrix(variances: List[float], correlations: List[Li
             cov_matrix[j, i] = covariance
     
     return cov_matrix
-
 
 class YAMLFaultTemplate:
     def __init__(self, template_config: Dict[str, Any], metric_names: List[str], 
@@ -187,7 +184,6 @@ class YAMLFaultTemplate:
             
         return current_shift
 
-
 class YAMLFaultInjector:
     def __init__(self, yaml_config_path: str, metric_names: List[str], 
                  baseline_values: Dict[str, float], max_values: Dict[str, float],
@@ -287,6 +283,47 @@ class YAMLFaultInjector:
             'active_faults': active_faults,
             'any_active': len(active_faults) > 0
         }
+
+class HealthMonitor:
+    def __init__(self, metric_names, signs, alpha=0.1, init_window=10, kappa=2.0):
+        self.metric_names = metric_names
+        self.signs = np.array(signs)
+        self.alpha = alpha
+        self.init_window = init_window
+        self.kappa = kappa
+        self.values = []
+        self.theta = None
+        self.sigma_theta = None
+
+    def normalise(self, metrics, baselines, stds):
+        return [(metrics[i] - baselines[self.metric_names[i]]) / stds[i]
+                for i in range(len(self.metric_names))]
+
+    def update(self, metrics, baselines, stds):
+        normed = self.normalise(metrics, baselines, stds)
+        h = np.mean(self.signs * np.array(normed))
+        self.values.append(h)
+
+        if len(self.values) <= self.init_window:
+            self.theta = np.mean(self.values)
+            self.sigma_theta = np.std(self.values) if len(self.values) > 1 else 0.01
+            return h, self.theta, "INIT"
+
+        self.theta = self.alpha * h + (1 - self.alpha) * self.theta
+        residual = abs(h - self.theta)
+        self.sigma_theta = 0.9 * self.sigma_theta + 0.1 * residual
+
+        if h < self.theta - 1.0:
+            status = "Faulty"
+        elif h >= 1.0:
+            status = "Good"
+        elif h >= 0:
+            status = "Fair"
+        else:
+            status = "Poor"
+
+        return h, self.theta, status
+
 
 def analyse_fault_impact(results: List[Dict], baseline_values: Dict[str, float]):
     """Analyse the impact of fault injection on metrics.
@@ -427,6 +464,7 @@ def detect_anomalies(results: List[Dict], baseline_values: Dict[str, float],
         else:
             print("  No anomalies detected")
 
+
 def create_visualisation(results: List[Dict], metric_names: List[str], baseline_values: Dict[str, float]):
     """Create comprehensive visualisation with proper handling of multiple fault occurrences."""
     fig, axes = plt.subplots(3, 1, figsize=(14, 10))
@@ -554,10 +592,13 @@ def create_detailed_visualisation(results: List[Dict], metric_names: List[str], 
     print(f"\nDetailed plot saved as 'fault_injection_detailed_analysis.png'")
     plt.close()
     
-def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, seed: int, fault_templates: str) -> Tuple[List[Dict], YAMLFaultInjector, Dict]:
+def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, seed: int, fault_templates):
     """Run complete simulation with YAML-based fault configuration."""
     print("Starting YAML-based Fault Injection Simulation...")
     print("="*50)
+
+    noise_scales = [0.05, 5, 0.002]  # Noise levels for cpu, rtt, plr
+    #noise_scales = [5, 3, 0.005]
     
     # Setup
     metric_names = ["cpu", "rtt", "plr"]
@@ -600,7 +641,27 @@ def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, s
             'active_faults': status['active_faults']
         }
         results.append(result)
-        
+    health_monitor = HealthMonitor(metric_names, signs=[-1, -1, -1], alpha=0.1)
+
+    history = []
+    for t in range(steps):
+        #baseline = generator.generate()
+        #observed = injector.step(baseline.copy())
+        h, theta, _status = health_monitor.update(
+            observed, baseline_values, noise_scales
+        )
+        _result = {
+            'step': t,
+            'baseline': baseline_values,
+            'observed': observed,
+            'active_faults': [f['template'].id for f in injector.active_faults],
+            'health_metric': h,
+            'adaptive_threshold': theta,
+            'health_status': _status
+        }
+        history.append(_result)
+        print(f"history: {history}")
+    
         if status['any_active']:
             print(f"t={t:2d}: cpu={observed[0]:.3f}, rtt={observed[1]:.1f}, "
                   f"plr={observed[2]:.4f}, faults={[f['fault_name'] for f in status['active_faults']]}")
@@ -628,7 +689,7 @@ def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, s
     if not injector.fault_history:
         print("No faults occurred during simulation")
     
-    return results, injector, analyse_fault_impact(results, baseline_values)
+    return results, injector, analyse_fault_impact(results, baseline_values), history
 
 
 """if __name__ == "__main__":

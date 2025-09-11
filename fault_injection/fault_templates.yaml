@@ -1,0 +1,178 @@
+# ALWAYS-FAULT YAML FOR TESTING
+# All occurrence probabilities set to 1.0 for continuous fault injection
+fault_templates:
+  - id: continuous_correlated_power
+    name: continuous_correlated_power_loss
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [2.0, 2.5, 1.8]
+    covariance:
+      rho: 0.8
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous high-correlation multi-metric disturbance FOR TESTING"
+
+  - id: continuous_transient_glitch
+    name: continuous_transient_glitch
+    type: additive
+    affected_metrics: [0]
+    severity_vector: [3.0]
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous transient spike in RTT FOR TESTING"
+
+  - id: continuous_intermittent_dropout
+    name: continuous_intermittent_dropout
+    type: persistent
+    subtype: additive_persistent
+    affected_metrics: [0]
+    severity_vector: [1.5]
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous intermittent RTT dropout FOR TESTING"
+
+  - id: continuous_random_noise_burst
+    name: continuous_random_noise_burst
+    type: additive
+    affected_metrics: [2]
+    severity_vector: [2.5]
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous burst of random noise in PLR FOR TESTING"
+
+  - id: continuous_short_spike
+    name: continuous_short_spike
+    type: additive
+    affected_metrics: [1]
+    severity_vector: [4.0]
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous CPU spike FOR TESTING"
+
+  - id: continuous_persistent_sensor
+    name: continuous_sensor_stuck
+    type: persistent
+    subtype: stuck_at
+    affected_metrics: [1]
+    stuck_value: max_value
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous CPU stuck sensor FOR TESTING"
+
+  - id: continuous_ramp_drift
+    name: continuous_ramp_drift
+    type: persistent
+    subtype: ramp
+    affected_metrics: [2]
+    ramp_slope: 0.05
+    max_deviation: 5.0
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous gradual PLR ramp drift FOR TESTING"
+
+  - id: continuous_complete_failure
+    name: continuous_complete_failure
+    type: persistent
+    subtype: stuck_at
+    affected_metrics: [1]
+    stuck_value: 0.0
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous complete CPU failure FOR TESTING"
+
+  - id: continuous_low_correlation
+    name: continuous_low_correlation_event
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [1.5, 1.0, 2.0]
+    covariance:
+      rho: 0.3
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous low correlation event FOR TESTING"
+
+  - id: continuous_medium_correlation
+    name: continuous_medium_correlation_event
+    type: additive
+    affected_metrics: [0,1]
+    severity_vector: [2.0, 2.5]
+    covariance:
+      rho: 0.5
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous medium correlation event FOR TESTING"
+
+  - id: continuous_high_correlation
+    name: continuous_high_correlation_event
+    type: additive
+    affected_metrics: [1,2]
+    severity_vector: [3.0, 2.0]
+    covariance:
+      rho: 0.7
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous high correlation event FOR TESTING"
+
+  - id: continuous_extreme_event
+    name: continuous_extreme_event
+    type: additive
+    affected_metrics: [0,1,2]
+    severity_vector: [4.0, 3.5, 4.5]
+    covariance: 
+      rho: 0.9
+      mode: pairwise_rho
+    occurrence_model:
+      type: bernoulli
+      p: 1.0  # Always occurs
+    duration_dist:
+      type: deterministic
+      n_steps: 10000  # Very long duration
+    note: "Continuous extreme event FOR TESTING"
