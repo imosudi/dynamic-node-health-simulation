@@ -286,6 +286,12 @@ class YAMLFaultInjector:
 
 class HealthMonitor:
     def __init__(self, metric_names, signs, alpha=0.1, init_window=10, kappa=2.0):
+        """
+        alpha: EWMA smoothing for theta
+        beta_sigma: EWMA smoothing for sigma_theta
+        kappa: decision margin multiplier
+        """
+        
         self.metric_names = metric_names
         self.signs = np.array(signs)
         self.alpha = alpha
@@ -443,7 +449,7 @@ def detect_anomalies(results: List[Dict], baseline_values: Dict[str, float],
         
         std_threshold = threshold_config[metric]['std_threshold']
         relative_threshold = threshold_config[metric]['relative_threshold']
-        
+        print("metric: ", metric, "mean_val: ", mean_val, " std_val: ", std_val)
         anomalies = []
         for r in results:
             # Standard deviation-based detection
@@ -455,15 +461,18 @@ def detect_anomalies(results: List[Dict], baseline_values: Dict[str, float],
             # Combined detection logic
             if (z_score > std_threshold) or (relative_change > relative_threshold):
                 anomalies.append((r['step'], r[metric], z_score, relative_change, r['any_fault_active']))
-        
+
+            
+
         print(f"\n{metric.upper()} anomalies (>{std_threshold}σ or >{relative_threshold*100:.0f}% change):")
         if anomalies:
             for step, value, z_score, rel_change, fault_active in anomalies:
                 status = "FAULT" if fault_active else "NORMAL"
                 print(f"  Step {step:2d}: {value:.4f} (z={z_score:.2f}, Δ={rel_change*100:.1f}%) [{status}]")
+        
         else:
             print("  No anomalies detected")
-
+            
 
 def create_visualisation(results: List[Dict], metric_names: List[str], baseline_values: Dict[str, float]):
     """Create comprehensive visualisation with proper handling of multiple fault occurrences."""
@@ -592,11 +601,11 @@ def create_detailed_visualisation(results: List[Dict], metric_names: List[str], 
     print(f"\nDetailed plot saved as 'fault_injection_detailed_analysis.png'")
     plt.close()
     
-def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, seed: int, fault_templates):
+def run_complete_simulation(default_weights, baseline_values:dict, max_values:dict, steps: int, seed: int, fault_templates):
     """Run complete simulation with YAML-based fault configuration."""
     print("Starting YAML-based Fault Injection Simulation...")
     print("="*50)
-
+    default_weights = {'PLR': 0.4, 'CPU': 0.3, 'RTT': 0.3}
     noise_scales = [0.05, 5, 0.002]  # Noise levels for cpu, rtt, plr
     #noise_scales = [5, 3, 0.005]
     
@@ -626,7 +635,7 @@ def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, s
     }
     
     # Run simulation
-    results = []
+    results = [] 
     for t in range(steps):
         metrics = gen.step()
         observed = injector.maybe_inject(metrics)
@@ -641,6 +650,7 @@ def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, s
             'active_faults': status['active_faults']
         }
         results.append(result)
+    
     health_monitor = HealthMonitor(metric_names, signs=[-1, -1, -1], alpha=0.1)
 
     history = []
@@ -671,9 +681,9 @@ def run_complete_simulation(baseline_values:dict, max_values:dict, steps: int, s
                   f"plr={observed[2]:.4f}, no faults")
     
     # Analysis
-    analyse_fault_impact(results, baseline_values)
+    #analyse_fault_impact(results, baseline_values)
     detect_anomalies(results, baseline_values, threshold_config)
-    create_visualisation(results, metric_names, baseline_values)
+    #create_visualisation(results, metric_names, baseline_values)
     #create_detailed_visualisation(results, metric_names, baseline_values)
     
     # Fault history
