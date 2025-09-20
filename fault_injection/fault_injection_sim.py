@@ -440,7 +440,13 @@ def detect_anomalies(results: List[Dict], baseline_values: Dict[str, float],
     print("\n" + "="*50)
     print("ENHANCED ANOMALY DETECTION")
     print("="*50)
+    results_lastdata = results[-1:]
     
+    tendency_data = {}
+    last_data = results_lastdata[0] if results_lastdata else {}
+    node_data = {"step": last_data.get("step", -1), "cpu": round(float(last_data.get("cpu", 0.0)), 4), "rtt": round(float(last_data.get("rtt", 0.0)), 4), "plr": round(float(last_data.get("plr", 0.0)), 4)    }
+    tendency_data["node_data"] = node_data
+    #print("tendency_data: ", tendency_data); time.sleep(200)
     for metric in ['cpu', 'rtt', 'plr']:
         values = [r[metric] for r in results]
         mean_val = np.mean(values)
@@ -449,7 +455,8 @@ def detect_anomalies(results: List[Dict], baseline_values: Dict[str, float],
         
         std_threshold = threshold_config[metric]['std_threshold']
         relative_threshold = threshold_config[metric]['relative_threshold']
-        print("metric: ", metric, "mean_val: ", mean_val, " std_val: ", std_val)
+        print(f"{metric}: ", "mean_val: ", mean_val, " std_val: ", std_val)
+        tendency_data[metric] = {"mean" : round(float(mean_val), 4), "std": round(float(std_val), 4)}
         anomalies = []
         for r in results:
             # Standard deviation-based detection
@@ -472,7 +479,8 @@ def detect_anomalies(results: List[Dict], baseline_values: Dict[str, float],
         
         else:
             print("  No anomalies detected")
-            
+    #print("tendency_data: ", tendency_data)  
+    return tendency_data      
 
 def create_visualisation(results: List[Dict], metric_names: List[str], baseline_values: Dict[str, float]):
     """Create comprehensive visualisation with proper handling of multiple fault occurrences."""
@@ -670,7 +678,7 @@ def run_complete_simulation(default_weights, baseline_values:dict, max_values:di
             'health_status': _status
         }
         history.append(_result)
-        print(f"history: {history}")
+        #print(f"history: {history}")
     
         if status['any_active']:
             print(f"t={t:2d}: cpu={observed[0]:.3f}, rtt={observed[1]:.1f}, "
@@ -699,7 +707,7 @@ def run_complete_simulation(default_weights, baseline_values:dict, max_values:di
     if not injector.fault_history:
         print("No faults occurred during simulation")
     
-    return results, injector, analyse_fault_impact(results, baseline_values), history
+    return results, injector, analyse_fault_impact(results, baseline_values), history, detect_anomalies(results, baseline_values, threshold_config)
 
 
 """if __name__ == "__main__":
