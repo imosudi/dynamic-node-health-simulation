@@ -205,3 +205,32 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# Temporary files
+~$*
+.~lock.*
+*.tmp
+*.temp
+*~
+# Temporary folders
+tmp/
+temp/
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+*.db
+*.db-journal
+*.bak
+*.backup
+*.swp
+*.swo
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
