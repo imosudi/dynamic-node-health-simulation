@@ -50,11 +50,22 @@ class fogNodeCharacterisation(object):
     
     def _generate_cloud_metrics(self) -> dict:
         """Generate optimised cloud server metrics."""
+        #  {'cpu': 0.2, 'rtt': 10, 'plr': 0.01}
         return {
             "node": "CloudDBServer",
-            "PLR": round(random.uniform(0, 2), 2),
-            "RTT": round(random.uniform(5, 30), 2),
-            "CPU": round(random.uniform(10, 40), 2),
+            "PLR": round(random.uniform(0, 2), 2), #expresses packet loss in percentage: x%
+            "RTT": round(random.uniform(5, 10), 2), #in milliseconds
+            "CPU": round(random.uniform(10, 40), 2), #in percentage of CPU usage: x%
+            "status": "HEALTHY"
+        }
+
+    def _generate_l1_metrics(self) -> dict:
+        """Generate L1 node metrics with realistic variations."""
+        return {
+            "node": "L1Node",
+            "PLR": round(random.uniform(2, 6), 2),
+            "RTT": round(random.uniform(20, 45), 2),
+            "CPU": round(random.uniform(30, 60), 2),
             "status": "HEALTHY"
         }
 

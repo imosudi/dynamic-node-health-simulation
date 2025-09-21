@@ -1000,7 +1000,7 @@ class fogNodeCharacterisation(object):
             
         with open('update_node_metric.json', 'w') as fp:
             json.dump(processed_metrics, fp, indent=4)
-        return node_metrics
+        return processed_metrics
     
         print("✅ All node metrics updated successfully.")
         return processed_metrics, failure_count

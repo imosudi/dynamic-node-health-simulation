@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 ##fault_injection/fault_injection_sim.py 
 """
@@ -211,6 +212,7 @@ class YAMLFaultInjector:
         
         # Check for new fault occurrences
         for template in self.templates:
+            print("template: ", template.name, " id: ", template.id); time.sleep(10)
             if template.id not in self.active_faults and template.sample_occurrence(self.rng):
                 # Start new fault
                 duration = template.sample_duration(self.rng)
@@ -609,105 +611,135 @@ def create_detailed_visualisation(results: List[Dict], metric_names: List[str], 
     print(f"\nDetailed plot saved as 'fault_injection_detailed_analysis.png'")
     plt.close()
     
-def run_complete_simulation(default_weights, baseline_values:dict, max_values:dict, steps: int, seed: int, fault_templates):
-    """Run complete simulation with YAML-based fault configuration."""
-    print("Starting YAML-based Fault Injection Simulation...")
-    print("="*50)
-    default_weights = {'PLR': 0.4, 'CPU': 0.3, 'RTT': 0.3}
+def run_complete_simulation(default_weights,
+                            baseline_values: dict,
+                            max_values: dict,
+                            steps: int,
+                            seed: int,
+                            fault_templates: list,
+                            stop_on_fault: bool = True):
+    """
+    Run complete simulation with YAML-based fault configuration.
+
+    Parameters
+    ----------
+    default_weights : dict
+        Weighting of metrics for health metric.
+    baseline_values : dict
+        Dict with 'cpu', 'rtt', 'plr' baseline values.
+    max_values : dict
+        Dict with 'cpu', 'rtt', 'plr' max values.
+    steps : int
+        Number of simulation steps.
+    seed : int
+        RNG seed.
+    fault_templates : list
+        Fault definitions from YAML.
+    stop_on_fault : bool, default=True
+        Whether to stop early when a real fault is detected.
+    """
+    print("Starting Fault Injection Simulation...")
+    print("="*60)
+
+    # metric setup
     noise_scales = [0.05, 5, 0.002]  # Noise levels for cpu, rtt, plr
-    #noise_scales = [5, 3, 0.005]
-    
-    # Setup
     metric_names = ["cpu", "rtt", "plr"]
-    
+
+    # metric generator
     gen = MetricGenerator(
-        metric_names, 
-        baselines=[baseline_values['cpu'], baseline_values['rtt'], baseline_values['plr']], 
-        noise_levels=[0.05, 5, 0.002], 
+        metric_names,
+        baselines=[baseline_values['cpu'],
+                   baseline_values['rtt'],
+                   baseline_values['plr']],
+        noise_levels=noise_scales,
         seed=seed
     )
-    
-    # Create YAML-based fault injector
-    injector = YAMLFaultInjector(fault_templates,
+
+    # fault injector
+    injector = YAMLFaultInjector(
+        fault_templates,
         metric_names,
         baseline_values,
         max_values,
         seed=seed
     )
-    
-    # Custom threshold configuration
+
+    # thresholds
     threshold_config = {
         'cpu': {'std_threshold': 2.0, 'relative_threshold': 0.5},
         'rtt': {'std_threshold': 2.0, 'relative_threshold': 0.3},
         'plr': {'std_threshold': 1.5, 'relative_threshold': 1.0}
     }
-    
-    # Run simulation
-    results = [] 
+
+    # run loop
+    results = []
+    health_monitor = HealthMonitor(metric_names, signs=[-1, -1, -1], alpha=0.1)
+    history = []
+
     for t in range(steps):
         metrics = gen.step()
         observed = injector.maybe_inject(metrics)
         status = injector.get_fault_status()
-        
-        result = {
-            'step': t,
-            'cpu': observed[0],
-            'rtt': observed[1],
-            'plr': observed[2],
-            'any_fault_active': status['any_active'],
-            'active_faults': status['active_faults']
-        }
-        results.append(result)
-    
-    health_monitor = HealthMonitor(metric_names, signs=[-1, -1, -1], alpha=0.1)
 
-    history = []
-    for t in range(steps):
-        #baseline = generator.generate()
-        #observed = injector.step(baseline.copy())
+        res = {
+            'step': t,
+            'cpu': float(observed[0]),
+            'rtt': float(observed[1]),
+            'plr': float(observed[2]),
+            'any_fault_active': status['any_active'],
+            'active_faults': status['active_faults']  # list of dicts
+        }
+        results.append(res)
+
+        # update health monitor
         h, theta, _status = health_monitor.update(
-            observed, baseline_values, noise_scales
+            np.array([res['cpu'], res['rtt'], res['plr']], dtype=float),
+            baseline_values,
+            noise_scales
         )
-        _result = {
+
+        # collect per-step history
+        history.append({
             'step': t,
             'baseline': baseline_values,
-            'observed': observed,
-            'active_faults': [f['template'].id for f in injector.active_faults],
+            'observed': np.array([res['cpu'], res['rtt'], res['plr']], dtype=float),
+            'active_faults_ids': [f.get('fault_id') for f in res['active_faults']],
+            'active_faults_names': [f.get('fault_name') for f in res['active_faults']],
             'health_metric': h,
             'adaptive_threshold': theta,
             'health_status': _status
-        }
-        history.append(_result)
-        #print(f"history: {history}")
-    
-        if status['any_active']:
-            print(f"t={t:2d}: cpu={observed[0]:.3f}, rtt={observed[1]:.1f}, "
-                  f"plr={observed[2]:.4f}, faults={[f['fault_name'] for f in status['active_faults']]}")
-            print("\n⚠️ Fault detected — stopping simulation early.\n"); break 
+        })
+
+        # print
+        if res['any_fault_active']:
+            fault_names = [f['fault_name'] for f in res['active_faults']]
+            print(f"t={t:2d}: cpu={res['cpu']:.3f}, rtt={res['rtt']:.1f}, "
+                  f"plr={res['plr']:.4f}, faults={fault_names}")
+            if stop_on_fault:
+                print("\n⚠️ Fault detected — stopping simulation early.\n")
+                break
         else:
-            print(f"t={t:2d}: cpu={observed[0]:.3f}, rtt={observed[1]:.1f}, "
-                  f"plr={observed[2]:.4f}, no faults")
-    
-    # Analysis
-    #analyse_fault_impact(results, baseline_values)
-    detect_anomalies(results, baseline_values, threshold_config)
-    #create_visualisation(results, metric_names, baseline_values)
-    #create_detailed_visualisation(results, metric_names, baseline_values)
-    
-    # Fault history
-    print("\n" + "="*50)
+            print(f"t={t:2d}: cpu={res['cpu']:.3f}, rtt={res['rtt']:.1f}, "
+                  f"plr={res['plr']:.4f}, no faults")
+
+    # analysis
+    analysis_data = analyse_fault_impact(results, baseline_values)
+    tendency = detect_anomalies(results, baseline_values, threshold_config)
+
+    # fault history (optional: in zero-fault mode this may be empty)
+    print("\n" + "="*60)
     print("FAULT HISTORY")
-    print("="*50)
-    for i, fault in enumerate(injector.fault_history):
-        print(f"Fault {i+1}: {fault['fault_name']} (ID: {fault['fault_id']})")
-        print(f"  Started: step {fault['start_step']}")
-        print(f"  Duration: {fault['duration']} steps")
-        print(f"  Initial delta: {fault['initial_delta']}")
-    
-    if not injector.fault_history:
+    print("="*60)
+    if injector.fault_history:
+        for i, fault in enumerate(injector.fault_history):
+            print(f"Fault {i+1}: {fault['fault_name']} (ID: {fault['fault_id']})")
+            print(f"  Started: step {fault['start_step']}")
+            print(f"  Duration: {fault['duration']} steps")
+            print(f"  Initial delta: {fault['initial_delta']}")
+    else:
         print("No faults occurred during simulation")
-    
-    return results, injector, analyse_fault_impact(results, baseline_values), history, detect_anomalies(results, baseline_values, threshold_config)
+
+    return results, injector, analysis_data, history, tendency
 
 
 """if __name__ == "__main__":
