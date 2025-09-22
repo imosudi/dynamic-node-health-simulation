@@ -8,12 +8,14 @@ Enhanced with comprehensive fault templates from YAML
 
 import time
 import numpy as np
+import random
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import yaml
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Optional, Dict, Any, Tuple,    Union 
 from enum import Enum
+from node_operations.logic import NetworkHierarchy
 
 class FaultType(Enum):
     ADDITIVE = "additive"
@@ -31,7 +33,7 @@ class DurationDistribution(Enum):
     GEOMETRIC = "geometric"
     DETERMINISTIC = "deterministic"
 
-class MetricGenerator:
+class MetricGenerator_old:
     def __init__(self, metric_names: List[str], baselines: List[float], 
                  noise_levels: List[float], seed: Optional[int], 
                  signs: Optional[List[float]] = None):
@@ -43,7 +45,104 @@ class MetricGenerator:
 
     def step(self) -> np.ndarray:
         noise = self.rng.normal(0, self.noise_levels)
-        return self.baselines + noise
+        print("self.baselines: ", self.baselines, " noise: ", noise); time.sleep(4)
+        new_level = self.baselines + noise
+        print("self.baselines: ", self.baselines, " new_level: ", new_level); time.sleep(4)
+        return new_level  
+
+
+
+class MetricGenerator:
+    def __init__(
+        self,
+        hierarchy,
+        seed: Optional[int] = None
+    ):
+        """
+        Layer-aware metric generator.
+        
+        Args:
+            hierarchy: A NetworkHierarchy() instance (with .nodes()).
+            seed: RNG seed for reproducibility.
+        """
+        self.hierarchy = hierarchy
+        self.rng = np.random.default_rng(seed)
+
+        # Define baseline + noise per layer
+        # Values represent [CPU, RTT, PLR]
+        self.layer_profiles: Dict[str, Dict[str, List[float]]] = {
+            "CLOUD": {
+                "baseline": [0.090, 22.8, 0.0068],   # [%CPU, ms RTT, %PLR]{'cpu':0.090, 'rtt': 22.8,    'plr':0.0068}
+                "noise":    [0.05, 5, 0.002] #[0.05, 5, 0.002]
+            },
+            "L1": {
+                "baseline": [45, 20, 4.0],
+                "noise":    [8, 6, 1.0]
+            },
+            "L2": {
+                "baseline": [40, 45, 5.0],
+                "noise":    [6, 10, 1.5]
+            },
+            "L3": {
+                "baseline": [35, 60, 7.0],
+                "noise":    [7, 15, 2.0]
+            },
+            "L4": {
+                "baseline": [25, 75, 10.0],
+                "noise":    [5, 20, 3.0]
+            },
+            "SENSOR": {
+                "baseline": [5, 200, 15.0],
+                "noise":    [2, 30, 4.0]
+            }
+        }
+
+    def _get_layer(self, node: str) -> str:
+        """Infer the layer type from the node name."""
+        if node == "CloudDBServer":
+            return "CLOUD"
+        elif node == "L1Node":
+            return "L1"
+        elif node.startswith("L2N"):
+            return "L2"
+        elif node.startswith("L3N"):
+            return "L3"
+        elif node.startswith("L4N"):
+            return "L4"
+        elif node.startswith("Sen_"):
+            return "SENSOR"
+        else:
+            raise ValueError(f"Unknown node layer for {node}")
+
+    def step(self) -> np.ndarray:
+        """
+        Generate one step of metrics for all nodes in the hierarchy.
+        Returns:
+            np.ndarray of shape (num_nodes, num_metrics) 
+            with columns [CPU, RTT, PLR].
+        """
+        node_list = self.hierarchy.nodes()
+        metrics = []
+        metrics_dict = {}
+
+        #print("node_list: ", node_list); time.sleep(100)
+        for node in node_list:
+            layer = self._get_layer(node)
+            base = np.array(self.layer_profiles[layer]["baseline"])
+            noise_scale = np.array(self.layer_profiles[layer]["noise"])
+            print("node: ", node, " layer: ", layer, " base: ", base, " noise_scale: ", noise_scale, self.layer_profiles[layer]["noise"]); #time.sleep(10)
+            noise = self.rng.normal(
+                0, 
+                noise_scale, 
+                size=len(base)
+            )
+            new_level = base + noise
+            print("base: ", base, " noise: ", noise, " new_level: ", new_level); time.sleep(4)
+            metrics.append(new_level)
+            metrics_dict[node] = base + noise
+        print("metrics: ", metrics); #time.sleep(100)
+        print("metrics_dict: ", metrics_dict); #time.sleep(100)
+        return np.array(metrics)  # shape = (num_nodes, 3)
 
 def create_valid_covariance_matrix(variances: List[float], correlations: List[List[float]]) -> np.ndarray:
     """Create a valid covariance matrix from variances and correlations."""
@@ -212,7 +311,7 @@ class YAMLFaultInjector:
         
         # Check for new fault occurrences
         for template in self.templates:
-            print("template: ", template.name, " id: ", template.id); time.sleep(10)
+            #print("template: ", template.name, " id: ", template.id); time.sleep(10)
             if template.id not in self.active_faults and template.sample_occurrence(self.rng):
                 # Start new fault
                 duration = template.sample_duration(self.rng)
@@ -372,60 +471,6 @@ def analyse_fault_impact(results: List[Dict], baseline_values: Dict[str, float])
         print(metric_data)
         data_retuned[metric] = metric_data
     
-    return data_retuned
-
-
-def analyse_fault_impact_old(results: List[Dict], baseline_values: Dict[str, float]):
-    """Analyse the impact of fault injection on metrics."""
-    print("\n" + "="*50)
-    print("FAULT IMPACT ANALYSIS")
-    print("="*50)
-    
-    normal_periods = [r for r in results if not r['any_fault_active']]
-    fault_periods = [r for r in results if r['any_fault_active']]
-    
-    if not fault_periods:
-        print("No fault periods detected.")
-        return
-    
-    print(f"Baseline values: {baseline_values}")
-    print(f"Normal period samples: {len(normal_periods)}")
-    print(f"Fault period samples: {len(fault_periods)}")
-    data_retuned = {}
-    for metric in ['cpu', 'rtt', 'plr']:
-        normal_vals = [r[metric] for r in normal_periods]
-        fault_vals = [r[metric] for r in fault_periods]
-        
-        normal_mean = np.mean(normal_vals)
-        fault_mean = np.mean(fault_vals)
-        impact_percent = ((fault_mean - normal_mean) / normal_mean) * 100
-        
-        print(f"\n{metric.upper()}:")
-        print(f"  Normal: μ={normal_mean:.4f}")
-        print(f"  Fault:  μ={fault_mean:.4f}")
-        print(f"  Impact: {impact_percent:+.4f}% change")
-        print(
-            {
-                str(metric): {
-                    "Normal": {
-                    "μ":round(normal_mean, 4)
-                    },
-                    "Fault": {
-                    "μ":round(fault_mean, 4)
-                    },
-                     "Impact":round(impact_percent, 4)
-                }
-            }
-        )
-        data_retuned[str(metric)] = {
-                    "Normal": {
-                        "μ": round(float(normal_mean), 4)
-                    },
-                    "Fault": {
-                        "μ": round(float(fault_mean), 4)
-                    },
-                    "Impact": round(float(impact_percent), 4)
-                }
     return data_retuned
 
 
@@ -646,7 +691,20 @@ def run_complete_simulation(default_weights,
     metric_names = ["cpu", "rtt", "plr"]
 
     # metric generator
-    gen = MetricGenerator(
+    """gen = MetricGenerator_old(
+        metric_names,
+        baselines=[baseline_values['cpu'],
+                   baseline_values['rtt'],
+                   baseline_values['plr']],
+        noise_levels=noise_scales,
+        seed=seed
+    )"""
+    
+    net = NetworkHierarchy()
+    gen = MetricGenerator(net, seed=123)
+
+
+    gen_old = MetricGenerator_old(
         metric_names,
         baselines=[baseline_values['cpu'],
                    baseline_values['rtt'],
@@ -654,6 +712,12 @@ def run_complete_simulation(default_weights,
         noise_levels=noise_scales,
         seed=seed
     )
+
+    step1 = gen.step()
+    print("Shape:", step1.shape)  # (num_nodes, 3)
+    print("First 5 nodes' metrics:\n", step1); time.sleep(2)
+    print("gen.step() 1: ", gen.step()); time.sleep(10)
+    print("gen.step() 2: ", gen_old.step()); time.sleep(10)
 
     # fault injector
     injector = YAMLFaultInjector(
@@ -676,6 +740,7 @@ def run_complete_simulation(default_weights,
     health_monitor = HealthMonitor(metric_names, signs=[-1, -1, -1], alpha=0.1)
     history = []
 
+    
     for t in range(steps):
         metrics = gen.step()
         observed = injector.maybe_inject(metrics)

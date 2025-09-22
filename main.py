@@ -31,7 +31,7 @@ except :
 default_weights     = {'CPU': 0.3,  'RTT': 0.3,     'PLR': 0.4 } # weights must sum to 1.0
 baseline_values     = {'cpu':0.090, 'rtt': 22.8,    'plr':0.0068} # cpu expressed in fraction: x/100, rtt in milliseconds, plr in fraction: x/100   
 max_values          = {'cpu': 0.75, 'rtt': 150,     'plr': 0.5}
-static_thresholds   = {'cpu': 0.73,  'rtt': 130.0,   'plr': 0.45 }   # Example: 70% CPU usage as threshold, Example: 100ms RTT as threshold  Example: 5% packet loss rate as threshold
+static_thresholds   = {'cpu': 0.73, 'rtt': 130.0,   'plr': 0.45 }   # Example: 70% CPU usage as threshold, Example: 100ms RTT as threshold  Example: 5% packet loss rate as threshold
 
 # Fault injection templates
 fault_templates = 'fault_injection/fault_templates_zero.yaml',
@@ -40,7 +40,7 @@ fault_templates = 'fault_injection/fault_templates.yaml',
 
 try:
         # Run simulation
-        results, injector, data_returned, history, tendency_data = run_complete_simulation(default_weights, baseline_values, max_values, steps=10, seed=10, fault_templates='fault_injection/fault_templates.yaml')
+        results, injector, data_returned, history, tendency_data = run_complete_simulation(default_weights, baseline_values, max_values, steps=1, seed=10, fault_templates='fault_injection/fault_templates_zero.yaml')
         print(f"\nSimulation completed successfully!")
         print(f"Total steps: {len(results)}")
         #print("results: ", results); time.sleep(500)

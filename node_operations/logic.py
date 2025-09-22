@@ -55,11 +55,11 @@ class FogNode:
                 f"energy_level={self.energy_level}, resources={self.resources})")
 
 
-class UpdatedNetworkHierarchy(object):
+class NetworkHierarchy(object):
     def __init__(self, *args):
         self.hierarchy = {}  # Store the node -> children relationships
         self.G = None        # Cached networkx DiGraph
-        super(UpdatedNetworkHierarchy, self).__init__(*args)
+        super(NetworkHierarchy, self).__init__(*args)
     
     def nodes(self) -> tuple:
         """Dynamically generates all node names in the hierarchy."""
@@ -578,7 +578,7 @@ class fogNodeCharacterisation(object):
                 
                 time.sleep(3)  # Brief pause between nodes
                 
-                nh = UpdatedNetworkHierarchy()
+                nh = NetworkHierarchy()
                 nh.create_network()  # Ensure hierarchy is built
                 print("self.hierarchy:", self.hierarchy); sleep(300)
                 descendants = nh.get_all_descendants(node)
@@ -593,7 +593,7 @@ class fogNodeCharacterisation(object):
         initialisation_node_metrics = {}
         for node, metric in node_metrics.items():
             new_plr = new_response = new_cpu =  None            
-            nh = UpdatedNetworkHierarchy()
+            nh = NetworkHierarchy()
             #nh.create_network()  # Ensure hierarchy is built
             G, pos, sensor_mappings = nh.create_network()  # Ensure hierarchy is built
             self.G = G
@@ -866,7 +866,7 @@ class fogNodeCharacterisation(object):
         for node, metric in node_metrics.items():
             new_plr = new_response = new_cpu = None
             
-            nh = UpdatedNetworkHierarchy()
+            nh = NetworkHierarchy()
             if not (node.startswith("L4") or node.startswith("Sen_")):
                 descendants = nh.get_all_descendants(node)
                 print("node: ", node, "\ndescendants: ", descendants); time.sleep(10)
@@ -949,7 +949,7 @@ class fogNodeCharacterisation(object):
         #print("self.G: ", self.G); sleep(300)
         
         # Step 1: Rebuild fog_nodes with child relationships
-        #hierarchy = UpdatedNetworkHierarchy()
+        #hierarchy = NetworkHierarchy()
         #G, _, _ = hierarchy.create_network()
 
         # Construct minimal fog_nodes with .children attribute
