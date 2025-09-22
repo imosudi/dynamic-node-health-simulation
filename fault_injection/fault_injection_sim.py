@@ -45,14 +45,12 @@ class MetricGenerator_old:
 
     def step(self) -> np.ndarray:
         noise = self.rng.normal(0, self.noise_levels)
-        print("self.baselines: ", self.baselines, " noise: ", noise); time.sleep(4)
+        #print("self.baselines: ", self.baselines, " noise: ", noise); time.sleep(1)
         new_level = self.baselines + noise
-        print("self.baselines: ", self.baselines, " new_level: ", new_level); time.sleep(4)
+        #print("self.baselines: ", self.baselines, " new_level: ", new_level); time.sleep(1)
         return new_level  
 
-
-
-class MetricGenerator:
+class MetricGenerator_intermediate:
     def __init__(
         self,
         hierarchy,
@@ -76,25 +74,25 @@ class MetricGenerator:
                 "noise":    [0.05, 5, 0.002] #[0.05, 5, 0.002]
             },
             "L1": {
-                "baseline": [45, 20, 4.0],
-                "noise":    [8, 6, 1.0]
+                "baseline": [0.45, 20, 0.4],
+                "noise":    [0.8, 6, 1.0]
             },
             "L2": {
-                "baseline": [40, 45, 5.0],
+                "baseline": [0.40, 45, 0.5],
                 "noise":    [6, 10, 1.5]
             },
             "L3": {
-                "baseline": [35, 60, 7.0],
+                "baseline": [0.35, 60, 7.0],
                 "noise":    [7, 15, 2.0]
             },
             "L4": {
-                "baseline": [25, 75, 10.0],
+                "baseline": [0.25, 75, 10.0],
                 "noise":    [5, 20, 3.0]
-            },
-            "SENSOR": {
-                "baseline": [5, 200, 15.0],
-                "noise":    [2, 30, 4.0]
-            }
+            }#,
+            #"SENSOR": {
+            #    "baseline": [5, 200, 15.0],
+            #    "noise":    [2, 30, 4.0]
+            #}
         }
 
     def _get_layer(self, node: str) -> str:
@@ -130,19 +128,110 @@ class MetricGenerator:
             layer = self._get_layer(node)
             base = np.array(self.layer_profiles[layer]["baseline"])
             noise_scale = np.array(self.layer_profiles[layer]["noise"])
-            print("node: ", node, " layer: ", layer, " base: ", base, " noise_scale: ", noise_scale, self.layer_profiles[layer]["noise"]); #time.sleep(10)
+            #print("node: ", node, " layer: ", layer, " base: ", base, " noise_scale: ", noise_scale, self.layer_profiles[layer]["noise"]); #time.sleep(10)
             noise = self.rng.normal(
                 0, 
                 noise_scale, 
                 size=len(base)
             )
             new_level = base + noise
-            print("base: ", base, " noise: ", noise, " new_level: ", new_level); time.sleep(4)
+            #print("base: ", base, " noise: ", noise, " new_level: ", new_level); time.sleep(1)
             metrics.append(new_level)
             metrics_dict[node] = base + noise
-        print("metrics: ", metrics); #time.sleep(100)
-        print("metrics_dict: ", metrics_dict); #time.sleep(100)
+        #print("metrics: ", metrics); #time.sleep(100)
+        #print("metrics_dict: ", metrics_dict); #time.sleep(100)
         return np.array(metrics)  # shape = (num_nodes, 3)
+
+
+class MetricGenerator:
+    def __init__(
+        self,
+        hierarchy,
+        seed: Optional[int] = None
+    ):
+        """
+        Layer-aware metric generator.
+        
+        Args:
+            hierarchy: A NetworkHierarchy() instance (with .nodes()).
+            seed: RNG seed for reproducibility.
+        """
+        self.hierarchy = hierarchy
+        self.rng = np.random.default_rng(seed)
+
+        # Define baseline + noise per layer
+        # Values represent [CPU, RTT, PLR]
+        self.layer_profiles: Dict[str, Dict[str, List[float]]] = {
+            "CLOUD": {
+                "baseline": [0.090, 22.8, 0.0068],
+                "noise":    [0.05, 5, 0.002]
+            },
+            "L1": {
+                "baseline": [0.45, 20, 0.4],
+                "noise":    [0.8, 6, 1.0]
+            },
+            "L2": {
+                "baseline": [0.40, 45, 0.5],
+                "noise":    [6, 10, 1.5]
+            },
+            "L3": {
+                "baseline": [0.35, 60, 7.0],
+                "noise":    [7, 15, 2.0]
+            },
+            "L4": {
+                "baseline": [0.25, 75, 10.0],
+                "noise":    [5, 20, 3.0]
+            },
+            "SENSOR": {
+                "baseline": [5, 200, 15.0],
+                "noise":    [2, 30, 4.0]
+            }
+        }
+
+    def _get_layer(self, node: str) -> str:
+        """Infer the layer type from the node name."""
+        if node == "CloudDBServer":
+            return "CLOUD"
+        elif node == "L1Node":
+            return "L1"
+        elif node.startswith("L2N"):
+            return "L2"
+        elif node.startswith("L3N"):
+            return "L3"
+        elif node.startswith("L4N"):
+            return "L4"
+        elif node.startswith("Sen_"):
+            return "SENSOR"
+        else:
+            raise ValueError(f"Unknown node layer for {node}")
+
+    def step(self) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+        """
+        Generate one step of metrics for all nodes in the hierarchy.
+        
+        Returns:
+            tuple:
+              - np.ndarray of shape (num_nodes, num_metrics) 
+                with columns [CPU, RTT, PLR]
+              - dict {node_name: np.ndarray([CPU, RTT, PLR])}
+        """
+        node_list = self.hierarchy.nodes()
+        metrics = []
+        metrics_dict = {}
+
+        for node in node_list:
+            layer = self._get_layer(node)
+            base = np.array(self.layer_profiles[layer]["baseline"])
+            noise_scale = np.array(self.layer_profiles[layer]["noise"])
+
+            noise = self.rng.normal(0, noise_scale, size=len(base))
+            new_level = base + noise
+
+            metrics.append(new_level)
+            metrics_dict[node] = new_level
+
+        return np.array(metrics), metrics_dict
+
 
 def create_valid_covariance_matrix(variances: List[float], correlations: List[List[float]]) -> np.ndarray:
     """Create a valid covariance matrix from variances and correlations."""
@@ -700,8 +789,7 @@ def run_complete_simulation(default_weights,
         seed=seed
     )"""
     
-    net = NetworkHierarchy()
-    gen = MetricGenerator(net, seed=123)
+    net = NetworkHierarchy();  gen = MetricGenerator(net, seed=seed)
 
 
     gen_old = MetricGenerator_old(
@@ -713,11 +801,11 @@ def run_complete_simulation(default_weights,
         seed=seed
     )
 
-    step1 = gen.step()
-    print("Shape:", step1.shape)  # (num_nodes, 3)
-    print("First 5 nodes' metrics:\n", step1); time.sleep(2)
-    print("gen.step() 1: ", gen.step()); time.sleep(10)
-    print("gen.step() 2: ", gen_old.step()); time.sleep(10)
+    #step1 = gen.step()
+    #print("Shape:", step1.shape)  # (num_nodes, 3)
+    #print("First 5 nodes' metrics:\n", step1); time.sleep(2)
+    print("gen.step() 1: ", gen_old.step(), "\n end of gen_old = MetricGenerator_old() "); time.sleep(2)
+    print("gen.step() 2: ", gen.step(), "\n end of net = NetworkHierarchy();  gen = MetricGenerator()"); time.sleep(2)
 
     # fault injector
     injector = YAMLFaultInjector(
@@ -742,7 +830,7 @@ def run_complete_simulation(default_weights,
 
     
     for t in range(steps):
-        metrics = gen.step()
+        metrics = gen_old.step()
         observed = injector.maybe_inject(metrics)
         status = injector.get_fault_status()
 

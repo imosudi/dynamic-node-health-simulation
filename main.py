@@ -19,6 +19,7 @@ except :
     if os.path.exists(node_list_path):
         node_list = pd.read_csv(node_list_path)
     else:
+        print("Will make an attempt to generate node_list.csv ...")
         node_list = create_node_list()
     all_node_ids = extract_node_ids('data/node_list.csv') 
 
@@ -40,7 +41,7 @@ fault_templates = 'fault_injection/fault_templates.yaml',
 
 try:
         # Run simulation
-        results, injector, data_returned, history, tendency_data = run_complete_simulation(default_weights, baseline_values, max_values, steps=1, seed=10, fault_templates='fault_injection/fault_templates_zero.yaml')
+        results, injector, data_returned, history, tendency_data = run_complete_simulation(default_weights, baseline_values, max_values, steps=1, seed=1, fault_templates='fault_injection/fault_templates.yaml')
         print(f"\nSimulation completed successfully!")
         print(f"Total steps: {len(results)}")
         #print("results: ", results); time.sleep(500)
