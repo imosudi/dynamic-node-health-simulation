@@ -32,7 +32,7 @@ except :
 
 # Configuration
 default_weights     = {'CPU': 0.3,  'RTT': 0.3,     'PLR': 0.4 } # weights must sum to 1.0
-baseline_values     = {'cpu':0.090, 'rtt': 22.8,    'plr':0.0068} # cpu expressed in fraction: x/100, rtt in milliseconds, plr in fraction: x/100   
+#baseline_values     = {'cpu':0.090, 'rtt': 22.8,    'plr':0.0068} # cpu expressed in fraction: x/100, rtt in milliseconds, plr in fraction: x/100   
 max_values          = {'cpu': 0.75, 'rtt': 150,     'plr': 0.5}
 static_thresholds   = {'cpu': 0.73, 'rtt': 130.0,   'plr': 0.45 }   # Example: 70% CPU usage as threshold, Example: 100ms RTT as threshold  Example: 5% packet loss rate as threshold
 
@@ -42,7 +42,7 @@ fault_templates = 'data/fault_templates_zero.yaml',
 fault_templates = 'data/fault_templates.yaml',
 #fault_templates = 'data/templates.yaml'
 for node in all_node_ids:
-    try:
+    #try:
         # Run simulation
         results, injector, data_returned, history, tendency_data \
             = run_complete_simulation(
@@ -55,42 +55,57 @@ for node in all_node_ids:
                             fault_templates='data/fault_templates_zero.yaml')
                             #fault_templates='data/fault_templates.yaml')
         print(f"\nSimulation completed successfully!")
-        print(f"Total steps: {len(results)}")
+        #print(f"Total steps: {len(results)}")
         #print("results: ", results); time.sleep(500)
         """for index, item in enumerate(results):
             print("\n","node: ", node, " index: ", index, " item: ", item); time.sleep(2)"""
-        
+        #print("results: ", results); time.sleep(1)
+        #print("tendency_data: ", tendency_data); time.sleep(5)
         # Write detailed CSV
-        for node_id in all_node_ids:
-            health_metric_calculator = healthMetricCalculator(
-                 node_id, tendency_data, default_weights, static_thresholds
+        #for node_id in all_node_ids:
+        node_id = node
+        health_metric_calculator = healthMetricCalculator(
+             node_id, tendency_data, default_weights, static_thresholds
                  )                                                  
-            health_metric = health_metric_calculator.healthMetric()
-            #print(f"Computed Health Metric for {node_id}: {health_metric}")
-            # Check if node_id exists in results    
-            if node_id not in results:
+        health_metric = health_metric_calculator.healthMetric()
+        #print(f"Computed Health Metric for {node_id}: {health_metric}")
+        # Check if node_id exists in results    
+        """if node_id not in results:
                 print(f"Warning: Node ID '{node_id}' not found in results.")
             else:
                 print(f"Node ID '{node_id}' found in results.")
-                
+                """
         # Write results to CSV
+        print("health_metric: ", health_metric); time.sleep(2)
 
-        dataset = health_metric[1]
+        try:
+            if df.empty:
+                print("Empty DataFrame, initializing new one.")
+                dataset = health_metric[1]
+                df = pd.DataFrame(dataset)
+            else:
+                dataset = health_metric[1]
+                new_df = pd.DataFrame(dataset)
+                df = pd.concat([df, new_df], ignore_index=True)
+        except (NameError, AttributeError):
+            dataset = health_metric[1]
+            df = pd.DataFrame(dataset)
+
         def get_metrics_dataset():
             """Return the collected metrics as a pandas DataFrame"""
-            return pd.DataFrame(dataset)
-        
+            return df
+
         def save_metrics_to_csv(filename="node_metrics.csv"):
             """Save the collected metrics to a CSV file"""
             df = get_metrics_dataset()
             df.to_csv(filename, index=False)
             return df
-        
+
         # Save metrics to CSV
         save_metrics_to_csv("node_metrics.csv")
 
-    except Exception as e:
-        print(f"Error during simulation: {e}")
-        import traceback
-        traceback.print_exc()
+    #except Exception as e:
+    #    print(f"Error during simulation: {e}")
+    #    import traceback
+    #    traceback.print_exc()
 

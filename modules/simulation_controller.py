@@ -122,13 +122,13 @@ def run_complete_simulation(node_id: str,
         baseline_values = layer_profiles["CLOUD"]["baseline"]
         noise_scales    = layer_profiles["CLOUD"]["noise"]
         noise_scales    = list(noise_scales.values())
-    elif node_id == "L1Node":
+    elif node_id == "L1N_01":
         baseline_values = layer_profiles["L1"]["baseline"]
         noise_scales    = layer_profiles["L1"]["noise"]
         noise_scales    = list(noise_scales.values())
     elif node_id.startswith("L2N"):
-        baseline_values = layer_profiles["L4"]["baseline"]
-        noise_scales    = layer_profiles["L4"]["noise"]
+        baseline_values = layer_profiles["L2"]["baseline"]
+        noise_scales    = layer_profiles["L2"]["noise"]
         noise_scales    = list(noise_scales.values())   
     elif node_id.startswith("L3N"):
         baseline_values = layer_profiles["L3"]["baseline"]
@@ -144,12 +144,12 @@ def run_complete_simulation(node_id: str,
     
         
 
-    print(f"Node ID: {node_id}"); 
+    '''print(f"Node ID: {node_id}"); 
     print(f"Baseline values: {baseline_values}")
     print(f"Max values: {max_values}")
     print(f"Simulation steps: {steps}")
     #print("layer_profiles: ", layer_profiles)
-    print("noise_scales: ", noise_scales); # time.sleep(2000)
+    print("noise_scales: ", noise_scales); # time.sleep(2000)'''
     '''for key, value in layer_profiles.items(): 
         print(f"  {key}: baseline={value['baseline']}, noise={value['noise']}")'''
 
@@ -249,7 +249,7 @@ def run_complete_simulation(node_id: str,
             'health_status': _status
         })
 
-        # print
+        """# print
         if res['any_fault_active']:
             fault_names = [f['fault_name'] for f in res['active_faults']]
             print(f"t={t:2d}: cpu={res['cpu']:.3f}, rtt={res['rtt']:.1f}, "
@@ -259,14 +259,14 @@ def run_complete_simulation(node_id: str,
                 break
         else:
             print(f"t={t:2d}: cpu={res['cpu']:.3f}, rtt={res['rtt']:.1f}, "
-                  f"plr={res['plr']:.4f}, no faults")
+                  f"plr={res['plr']:.4f}, no faults")"""
 
     # analysis
     analysis_data = analyse_fault_impact(results, baseline_values)
     tendency = detect_anomalies(results, baseline_values, threshold_config)
 
     # fault history (optional: in zero-fault mode this may be empty)
-    print("\n" + "="*60)
+    """print("\n" + "="*60)
     print("FAULT HISTORY")
     print("="*60)
     if injector.fault_history:
@@ -276,6 +276,6 @@ def run_complete_simulation(node_id: str,
             #print(f"  Duration: {fault['duration']} steps")
             #print(f"  Initial delta: {fault['initial_delta']}")
     else:
-        print("No faults occurred during simulation")
+        print("No faults occurred during simulation")"""
 
     return results, injector, analysis_data, history, tendency

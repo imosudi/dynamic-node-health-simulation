@@ -37,16 +37,16 @@ def analyse_fault_impact(results: List[Dict], baseline_values: Dict[str, float])
     """Analyse the impact of fault injection on metrics.
        Always returns analysis data, even if no faults are detected.
     """
-    print("\n" + "="*50)
+    """print("\n" + "="*50)
     print("FAULT IMPACT ANALYSIS")
-    print("="*50)
+    print("="*50)"""
     
     normal_periods = [r for r in results if not r['any_fault_active']]
     fault_periods = [r for r in results if r['any_fault_active']]
     
-    print(f"Baseline values: {baseline_values}")
+    """print(f"Baseline values: {baseline_values}")
     print(f"Normal period samples: {len(normal_periods)}")
-    print(f"Fault period samples: {len(fault_periods)}")
+    print(f"Fault period samples: {len(fault_periods)}")"""
     
     data_retuned = {}
     for metric in ['cpu', 'rtt', 'plr']:
@@ -85,9 +85,9 @@ def detect_anomalies(results: List[Dict], baseline_values: Dict[str, float],
             'plr': {'std_threshold': 1.5, 'relative_threshold': 1.0}  # More sensitive to PLR changes
         }
     
-    print("\n" + "="*50)
+    """print("\n" + "="*50)
     print("ENHANCED ANOMALY DETECTION")
-    print("="*50)
+    print("="*50)"""
     results_lastdata = results[-1:]
     
     tendency_data = {}

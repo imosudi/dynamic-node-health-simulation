@@ -214,7 +214,7 @@ class YAMLFaultInjector:
                     'duration': duration
                 })
                 
-                print(f"Starting fault: {template.name} for {duration} steps")
+                #print(f"Starting fault: {template.name} for {duration} steps")
         
         # Apply active faults and update them
         faults_to_remove = []
@@ -234,7 +234,7 @@ class YAMLFaultInjector:
             fault_data['remaining_steps'] -= 1
             if fault_data['remaining_steps'] <= 0:
                 faults_to_remove.append(fault_id)
-                print(f"Ending fault: {template.name}")
+                #print(f"Ending fault: {template.name}")
             
             active_faults_this_step.append(template.name)
         
