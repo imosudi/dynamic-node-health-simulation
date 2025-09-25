@@ -6,12 +6,13 @@ from enum import Enum
 
 import pandas as pd
 from typing import List, Optional, Dict, Any, Tuple,    Union 
-from fault_injection.fault_injection_sim import run_complete_simulation
-from logging_mod.csv_writer import write_detailed_csv
+from modules.simulation_controller import run_complete_simulation
+from logs.csv_writer import write_detailed_csv
 #import numpy as np
-from fault_injection.health_metrics import  healthMetricCalculator
-from node_operations.node_generators import create_node_list
-from node_operations.node_id_extract import extract_node_ids
+from modules.health_classifier import  healthMetricCalculator
+from modules.node_operations.node_generators import create_node_list
+from modules.node_operations.node_id_extract import extract_node_ids
+from modules.node_profiler import layer_profiles
 
 """
 Pending tasks: health_monitor, HealthMonitor
@@ -35,39 +36,11 @@ baseline_values     = {'cpu':0.090, 'rtt': 22.8,    'plr':0.0068} # cpu expresse
 max_values          = {'cpu': 0.75, 'rtt': 150,     'plr': 0.5}
 static_thresholds   = {'cpu': 0.73, 'rtt': 130.0,   'plr': 0.45 }   # Example: 70% CPU usage as threshold, Example: 100ms RTT as threshold  Example: 5% packet loss rate as threshold
 
-
-layer_profiles = {
-            "CLOUD": {
-                "baseline": {'cpu': 0.09, 'rtt': 22.8, 'plr': 0.0068}, #[0.090, 22.8, 0.0068],
-                "noise":    {'cpu': 0.05, 'rtt': 5, 'plr': 0.002} #[0.05, 5, 0.002]
-            },
-            "L1": {
-                "baseline": {'cpu': 0.45, 'rtt': 20, 'plr': 0.4},
-                "noise":    {'cpu': 0.12, 'rtt': 6, 'plr': 0.009}
-            },
-            "L2": {
-                "baseline": {'cpu': 0.40, 'rtt': 45, 'plr': 0.5},
-                "noise":    {'cpu': 0.2, 'rtt': 10, 'plr': 0.05}
-            },
-            "L3": {
-                "baseline": {'cpu': 0.35, 'rtt': 60, 'plr': 7.0},
-                "noise":    {'cpu': 0.25, 'rtt': 15, 'plr': 0.075}
-            },
-            "L4": {
-                "baseline": {'cpu': 0.25, 'rtt': 75, 'plr': 10.0},
-                "noise":    {'cpu': 0.45, 'rtt': 20, 'plr': 0.085}
-            }
-            #"SENSOR": {
-            #    "baseline": [5, 200, 15.0],
-            #    "noise":    [2, 30, 4.0]
-            #}
-        }
-    
     
 # Fault injection templates
-fault_templates = 'fault_injection/fault_templates_zero.yaml',
-fault_templates = 'fault_injection/fault_templates.yaml',
-#fault_templates = 'fault_injection/templates.yaml'
+fault_templates = 'data/fault_templates_zero.yaml',
+fault_templates = 'data/fault_templates.yaml',
+#fault_templates = 'data/templates.yaml'
 for node in all_node_ids:
     try:
         # Run simulation
@@ -79,8 +52,8 @@ for node in all_node_ids:
                      max_values,
                         steps=2,
                           seed=1,
-                            fault_templates='fault_injection/fault_templates_zero.yaml')
-                            #fault_templates='fault_injection/fault_templates.yaml')
+                            fault_templates='data/fault_templates_zero.yaml')
+                            #fault_templates='data/fault_templates.yaml')
         print(f"\nSimulation completed successfully!")
         print(f"Total steps: {len(results)}")
         #print("results: ", results); time.sleep(500)
