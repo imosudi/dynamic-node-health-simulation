@@ -107,7 +107,7 @@ class fogNodeCharacterisation(object):
         self.dataset['plr'].append(plr)
         self.dataset['cpu'].append(cpu)
         self.dataset['rtt'].append(rtt)
-        self.dataset['weighted_health_score'].append(weighted_health_score)
+        #self.dataset['weighted_health_score'].append(weighted_health_score)
         self.dataset['health_threshold'].append(health_threshold)
         self.dataset['health_difference'].append(health_difference)
         self.dataset['health_status'].append(health_status)

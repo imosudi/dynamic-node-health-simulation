@@ -1,5 +1,5 @@
 node_id,tier,location,node_type,management_zone,crop_focus,criticality,power_source,sensor_type
-CloudDB_Server,L0,Cloud_Provider,Cloud_Database,Entire_Network,All_Crops,Mission_Critical,Grid_Backup,
+CloudDBServer,L0,Cloud_Provider,Cloud_Database,Entire_Network,All_Crops,Mission_Critical,Grid_Backup,
 L1N_01,L1,Farm_Office,Farm_Management_System,Entire_Farm,All_Crops,Ultra_High,Solar_Diesel_Hybrid,
 L2N_01,L2,Cereal_Belt_Control,Zone_Supervisor,Cereal_Belt,Cereal,High,Solar_Battery,
 L2N_02,L2,Rootcrop_Zone_Control,Zone_Supervisor,Rootcrop_Zone,Rootcrop,High,Solar_Battery,

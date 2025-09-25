@@ -1,2 +1,2 @@
 timestamp,node_id,plr,cpu,rtt,weighted_health_score,health_threshold,health_difference,health_status,anomaly_type
-2025-09-22 06:03:58.731257+00:00,L4N_36,5.259,8.2985,191.4751,0.0,0.0,0.0,HEALTHY,NONE
+2025-09-25 09:07:34.474069+00:00,L4N_36,10.0379,-0.3364,93.1071,0.4000808625337765,0.4000808625337765,0.0,HEALTHY,NONE

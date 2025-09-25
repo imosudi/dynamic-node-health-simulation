@@ -36,7 +36,7 @@ def create_node_list():
     # --- Node Definitions ---
     # Layer 0: Cloud Database Server
     node_data.append({
-        "node_id": "CloudDB_Server",
+        "node_id": "CloudDBServer",
         "tier": "L0",
         "location": "Cloud_Provider",
         "node_type": "Cloud_Database",

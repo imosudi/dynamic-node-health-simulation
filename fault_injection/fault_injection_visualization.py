@@ -1,123 +1,138 @@
 import numpy as np
+import random
 import matplotlib
-import os
-
-# Check if we're in an interactive environment
-if os.environ.get('DISPLAY') is None:
-    matplotlib.use('Agg')  # Use non-interactive backend if no display
-
+matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
+import yaml
+from typing import List, Optional, Dict, Any, Tuple,    Union 
+from enum import Enum
 
-# ===========================
-# Step 1: Deterministic Metric Generator
-# ===========================
 
-def generate_baseline_metrics(T=200, means=None, stds=None, random_state=None):
-    rng = np.random.default_rng(random_state)
-    m = len(means)
-    X = np.zeros((T, m))
-    for k in range(m):
-        X[:, k] = rng.normal(loc=means[k], scale=stds[k], size=T)
-    return X
 
-# ===========================
-# Step 2: Correlated Persistent Fault Injection
-# ===========================
-
-def inject_correlated_persistent_faults(X, fault_templates, random_state=None):
-    """
-    X: baseline metrics (T x m)
-    fault_templates: list of dicts with keys:
-        - start: time index when fault may begin
-        - cov: covariance matrix (m x m)
-        - drift: per-step drift vector (m,)
-        - p_end: probability to end fault at each step (geometric)
-    """
-    rng = np.random.default_rng(random_state)
-    T, m = X.shape
-    X_faulty = X.copy()
-    fault_mask = np.zeros(T, dtype=bool)
-
-    for template in fault_templates:
-        t = template['start']
-        active = True
-        drift_acc = np.zeros(m)
-        while t < T and active:
-            # Add correlated noise
-            perturb = rng.multivariate_normal(mean=np.zeros(m), cov=template['cov'])
-            # Add drift
-            drift_acc += template['drift']
-            X_faulty[t, :] += perturb + drift_acc
-            fault_mask[t] = True
-            # Decide whether to end fault
-            if rng.random() < template['p_end']:
-                active = False
-            t += 1
-
-    return X_faulty, fault_mask
-
-# ===========================
-# Quick Visualization
-# ===========================
-
-def plot_fault_injection(X_baseline, X_faulty, fault_mask, metric_names=None, save_path=None):
-    T, m = X_baseline.shape
-    time = np.arange(T)
-    fig, axes = plt.subplots(m, 1, figsize=(10, 2 * m), sharex=True)
-
-    if m == 1:
-        axes = [axes]
-
-    for k, ax in enumerate(axes):
-        name = metric_names[k] if metric_names else f"Metric {k}"
-        ax.plot(time, X_baseline[:, k], label=f"Baseline {name}", alpha=0.7)
-        ax.plot(time, X_faulty[:, k], label=f"Faulty {name}", alpha=0.9)
-        ax.fill_between(time, ax.get_ylim()[0], ax.get_ylim()[1], where=fault_mask,
-                        color='red', alpha=0.1, label='Fault Active' if k == 0 else "")
-        ax.set_ylabel(name)
-        ax.legend(loc='upper right')
-
-    axes[-1].set_xlabel("Time Step")
+def create_visualisation(results: List[Dict], metric_names: List[str], baseline_values: Dict[str, float]):
+    """Create comprehensive visualisation with proper handling of multiple fault occurrences."""
+    fig, axes = plt.subplots(3, 1, figsize=(14, 10))
+    
+    steps = [r['step'] for r in results]
+    
+    colors = ['blue', 'red', 'green']
+    fault_colors = ['red', 'orange', 'purple', 'brown', 'pink']  # Different colors for different fault types
+    
+    # Extract fault information
+    fault_periods = []
+    current_fault = None
+    fault_start = None
+    
+    for i, result in enumerate(results):
+        if result['any_fault_active'] and current_fault is None:
+            # Fault starting
+            current_fault = result['active_faults'][0]['fault_name'] if result['active_faults'] else "Unknown"
+            fault_start = i
+        elif not result['any_fault_active'] and current_fault is not None:
+            # Fault ending
+            fault_periods.append((fault_start, i-1, current_fault))
+            current_fault = None
+            fault_start = None
+    
+    # Handle case where fault is still active at end
+    if current_fault is not None:
+        fault_periods.append((fault_start, len(results)-1, current_fault))
+    
+    # Create a mapping of fault types to colors
+    unique_faults = list(set([fault_type for _, _, fault_type in fault_periods]))
+    fault_color_map = {fault: fault_colors[i % len(fault_colors)] for i, fault in enumerate(unique_faults)}
+    
+    for i, metric in enumerate(metric_names):
+        values = [r[metric] for r in results]
+        
+        # Plot metric values
+        axes[i].plot(steps, values, color=colors[i], linewidth=1.5, label=f'{metric.upper()}')
+        
+        # Add baseline
+        baseline = baseline_values[metric]
+        axes[i].axhline(y=baseline, color='black', linestyle='--', alpha=0.7, label='Baseline')
+        
+        # Highlight fault periods with different colors for different fault types
+        for start, end, fault_type in fault_periods:
+            color = fault_color_map[fault_type]
+            # Only add label for first occurrence of each fault type in the first subplot
+            label = fault_type if (i == 0 and fault_periods.index((start, end, fault_type)) == 
+                                  [f[2] for f in fault_periods].index(fault_type)) else ""
+            axes[i].axvspan(start, end, alpha=0.3, color=color, label=label)
+        
+        axes[i].set_ylabel(f'{metric.upper()}')
+        axes[i].grid(True, alpha=0.3)
+        
+        # Only show legend on first subplot to avoid repetition
+        if i == 0:
+            axes[i].legend(loc='upper right', bbox_to_anchor=(1.15, 1))
+    
+    axes[-1].set_xlabel('Time Step')
+    plt.suptitle('Fault Injection Simulation Results with Multiple Fault Types')
     plt.tight_layout()
     
-    if save_path:
-        plt.savefig(save_path)
-        print(f"Plot saved to {save_path}")
-    
-    # Only try to show the plot if we have a display
-    if os.environ.get('DISPLAY') is not None:
-        try:
-            plt.show()
-        except:
-            print("Plot display failed even though DISPLAY is set.")
-    else:
-        print("No display available. Plot was saved to file if requested.")
-    
+    # Save plot
+    plt.savefig('fault_injection_analysis.png', dpi=300, bbox_inches='tight')
+    print(f"\nPlot saved as 'fault_injection_analysis.png'")
     plt.close()
 
-# ===========================
-# Example Usage
-# ===========================
-if __name__ == "__main__":
-    means = [50, 30, 100]
-    stds = [5, 3, 10]
-    X_baseline = generate_baseline_metrics(T=200, means=means, stds=stds, random_state=42)
 
-    fault_templates = [
-        {
-            'start': 50,
-            'cov': np.array([[10, 5, 2], [5, 8, 1], [2, 1, 6]]),
-            'drift': np.array([0.1, -0.05, 0.2]),
-            'p_end': 0.05
-        }
-    ]
-
-    X_faulty, fault_mask = inject_correlated_persistent_faults(X_baseline, fault_templates, random_state=42)
-
-    plot_fault_injection(
-        X_baseline, 
-        X_faulty, 
-        fault_mask, 
-        metric_names=["PLR", "CPU", "RTT"],
-        save_path="fault_injection_plot.png"  # Save the plot to a file
-    )
+# Alternative version if you want to show all active faults at each step
+def create_detailed_visualisation(results: List[Dict], metric_names: List[str], baseline_values: Dict[str, float]):
+    """Create visualisation showing all active faults at each time step."""
+    fig, axes = plt.subplots(3, 1, figsize=(14, 10))
+    
+    steps = [r['step'] for r in results]
+    
+    colors = ['blue', 'red', 'green']
+    fault_colors = ['red', 'orange', 'purple', 'brown', 'pink', 'cyan', 'yellow', 'gray']
+    
+    # Create a list of all unique fault names
+    all_faults = []
+    for result in results:
+        if result['active_faults']:
+            for fault in result['active_faults']:
+                if fault['fault_name'] not in all_faults:
+                    all_faults.append(fault['fault_name'])
+    
+    # Create color mapping
+    fault_color_map = {fault: fault_colors[i % len(fault_colors)] for i, fault in enumerate(all_faults)}
+    
+    for i, metric in enumerate(metric_names):
+        values = [r[metric] for r in results]
+        
+        # Plot metric values
+        axes[i].plot(steps, values, color=colors[i], linewidth=1.5, label=f'{metric.upper()}')
+        
+        # Add baseline
+        baseline = baseline_values[metric]
+        axes[i].axhline(y=baseline, color='black', linestyle='--', alpha=0.7, label='Baseline')
+        
+        # Highlight fault periods
+        for step_idx, result in enumerate(results):
+            if result['active_faults']:
+                # Get the primary fault for coloring (use the first one)
+                primary_fault = result['active_faults'][0]['fault_name']
+                color = fault_color_map[primary_fault]
+                
+                # Draw a vertical line at this step
+                axes[i].axvline(x=step_idx, color=color, alpha=0.2, linewidth=2)
+        
+        axes[i].set_ylabel(f'{metric.upper()}')
+        axes[i].grid(True, alpha=0.3)
+    
+    # Create a custom legend for fault types
+    from matplotlib.patches import Patch
+    legend_elements = [Patch(facecolor=fault_color_map[fault], alpha=0.7, label=fault) 
+                      for fault in all_faults]
+    axes[0].legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.15, 1))
+    
+    axes[-1].set_xlabel('Time Step')
+    plt.suptitle('Fault Injection Simulation - All Active Faults Marked')
+    plt.tight_layout()
+    
+    # Save plot
+    plt.savefig('fault_injection_detailed_analysis.png', dpi=300, bbox_inches='tight')
+    print(f"\nDetailed plot saved as 'fault_injection_detailed_analysis.png'")
+    plt.close()
+    

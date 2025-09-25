@@ -2,8 +2,10 @@
 import os
 import time
 from collections import defaultdict
+from enum import Enum
 
 import pandas as pd
+from typing import List, Optional, Dict, Any, Tuple,    Union 
 from fault_injection.fault_injection_sim import run_complete_simulation
 from logging_mod.csv_writer import write_detailed_csv
 #import numpy as np
@@ -11,7 +13,10 @@ from fault_injection.health_metrics import  healthMetricCalculator
 from node_operations.node_generators import create_node_list
 from node_operations.node_id_extract import extract_node_ids
 
+"""
+Pending tasks: health_monitor, HealthMonitor
 
+"""
 try:
     all_node_ids = extract_node_ids('data/node_list.csv')    
 except :
@@ -24,41 +29,71 @@ except :
     all_node_ids = extract_node_ids('data/node_list.csv') 
 
 
-
-#print(all_node_ids); time.sleep(200) 
-# ['CloudDB_Server', 'L1N_01', 'L2N_01', 'L2N_02', 'L2N_03', 'L2N_04', 'L3N_01', 'L3N_02', 'L3N_03', 'L3N_04', 'L3N_05', 'L3N_06', 'L3N_07', 'L3N_08', 'L3N_09', 'L3N_10', 'L3N_11', 'L3N_12', 'L4N_01', 'L4N_02', 'L4N_03', 'L4N_04', 'L4N_05', 'L4N_06', 'L4N_07', 'L4N_08', 'L4N_09', 'L4N_10', 'L4N_11', 'L4N_12', 'L4N_13', 'L4N_14', 'L4N_15', 'L4N_16', 'L4N_17', 'L4N_18', 'L4N_19', 'L4N_20', 'L4N_21', 'L4N_22', 'L4N_23', 'L4N_24', 'L4N_25', 'L4N_26', 'L4N_27', 'L4N_28', 'L4N_29', 'L4N_30', 'L4N_31', 'L4N_32', 'L4N_33', 'L4N_34', 'L4N_35', 'L4N_36']
-
 # Configuration
 default_weights     = {'CPU': 0.3,  'RTT': 0.3,     'PLR': 0.4 } # weights must sum to 1.0
 baseline_values     = {'cpu':0.090, 'rtt': 22.8,    'plr':0.0068} # cpu expressed in fraction: x/100, rtt in milliseconds, plr in fraction: x/100   
 max_values          = {'cpu': 0.75, 'rtt': 150,     'plr': 0.5}
 static_thresholds   = {'cpu': 0.73, 'rtt': 130.0,   'plr': 0.45 }   # Example: 70% CPU usage as threshold, Example: 100ms RTT as threshold  Example: 5% packet loss rate as threshold
 
+
+layer_profiles = {
+            "CLOUD": {
+                "baseline": {'cpu': 0.09, 'rtt': 22.8, 'plr': 0.0068}, #[0.090, 22.8, 0.0068],
+                "noise":    {'cpu': 0.05, 'rtt': 5, 'plr': 0.002} #[0.05, 5, 0.002]
+            },
+            "L1": {
+                "baseline": {'cpu': 0.45, 'rtt': 20, 'plr': 0.4},
+                "noise":    {'cpu': 0.12, 'rtt': 6, 'plr': 0.009}
+            },
+            "L2": {
+                "baseline": {'cpu': 0.40, 'rtt': 45, 'plr': 0.5},
+                "noise":    {'cpu': 0.2, 'rtt': 10, 'plr': 0.05}
+            },
+            "L3": {
+                "baseline": {'cpu': 0.35, 'rtt': 60, 'plr': 7.0},
+                "noise":    {'cpu': 0.25, 'rtt': 15, 'plr': 0.075}
+            },
+            "L4": {
+                "baseline": {'cpu': 0.25, 'rtt': 75, 'plr': 10.0},
+                "noise":    {'cpu': 0.45, 'rtt': 20, 'plr': 0.085}
+            }
+            #"SENSOR": {
+            #    "baseline": [5, 200, 15.0],
+            #    "noise":    [2, 30, 4.0]
+            #}
+        }
+    
+    
 # Fault injection templates
 fault_templates = 'fault_injection/fault_templates_zero.yaml',
 fault_templates = 'fault_injection/fault_templates.yaml',
 #fault_templates = 'fault_injection/templates.yaml'
-
-try:
+for node in all_node_ids:
+    try:
         # Run simulation
-        results, injector, data_returned, history, tendency_data = run_complete_simulation(default_weights, baseline_values, max_values, steps=1, seed=1, fault_templates='fault_injection/fault_templates.yaml')
+        results, injector, data_returned, history, tendency_data \
+            = run_complete_simulation(
+                node,
+                 default_weights,
+                   layer_profiles,
+                     max_values,
+                        steps=2,
+                          seed=1,
+                            fault_templates='fault_injection/fault_templates_zero.yaml')
+                            #fault_templates='fault_injection/fault_templates.yaml')
         print(f"\nSimulation completed successfully!")
         print(f"Total steps: {len(results)}")
         #print("results: ", results); time.sleep(500)
-
-
-        #health_metric_calculator = healthMetricCalculator("L1N_01",tendency_data, default_weights, static_thresholds)                                                  
-        #health_metric = health_metric_calculator.healthMetric()
-        #print(f"Computed Health Metric: {health_metric}")
+        """for index, item in enumerate(results):
+            print("\n","node: ", node, " index: ", index, " item: ", item); time.sleep(2)"""
         
-
-
-        #print("all_node_ids:", all_node_ids)
-
+        # Write detailed CSV
         for node_id in all_node_ids:
-            health_metric_calculator = healthMetricCalculator(node_id, tendency_data, default_weights, static_thresholds)                                                  
+            health_metric_calculator = healthMetricCalculator(
+                 node_id, tendency_data, default_weights, static_thresholds
+                 )                                                  
             health_metric = health_metric_calculator.healthMetric()
-            print(f"Computed Health Metric for {node_id}: {health_metric}")
+            #print(f"Computed Health Metric for {node_id}: {health_metric}")
             # Check if node_id exists in results    
             if node_id not in results:
                 print(f"Warning: Node ID '{node_id}' not found in results.")
@@ -81,7 +116,7 @@ try:
         # Save metrics to CSV
         save_metrics_to_csv("node_metrics.csv")
 
-except Exception as e:
+    except Exception as e:
         print(f"Error during simulation: {e}")
         import traceback
         traceback.print_exc()
