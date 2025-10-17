@@ -11,7 +11,7 @@ from typing import Dict, List, Optional,Tuple
 from collections import defaultdict
 import logging
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import sleep
 import json
 
@@ -564,7 +564,8 @@ class fogNodeCharacterisation(object):
                 # Update metric with health data
                 node_details["health_metrics"] = healthmetric
                 node_details["threshold"] = threshold
-                node_details["last_updated"] = datetime.now().isoformat()
+                #node_details["last_updated"] = datetime.now().isoformat()
+                node_details["last_updated"] = datetime.now(timezone.utc).astimezone().isoformat()
                 
                 health_diff = healthmetric - threshold
                 
@@ -624,7 +625,7 @@ class fogNodeCharacterisation(object):
                 threshold = self.update_threshold_with_bounds(node_id, healthmetric)
                                 
                 # Update metric with health data
-                metric["health_metrics"] = healthmetric; metric["threshold"] = threshold; metric["last_updated"] = datetime.now().isoformat(); health_diff = healthmetric - threshold 
+                metric["health_metrics"] = healthmetric; metric["threshold"] = threshold; metric["last_updated"] = datetime.now(timezone.utc).astimezone().isoformat(); health_diff = healthmetric - threshold 
                 
                 nodeStatus = self.healthStatusold(metric, healthmetric, threshold)
                 #nodeStatus = self.healthStatus(metric, healthmetric, threshold)
@@ -657,7 +658,7 @@ class fogNodeCharacterisation(object):
                 threshold = self.update_threshold_with_bounds(node_id, healthmetric)
                                 
                 # Update metric with health data
-                metric["health_metrics"] = healthmetric; metric["threshold"] = threshold; metric["last_updated"] = datetime.now().isoformat(); health_diff = healthmetric - threshold
+                metric["health_metrics"] = healthmetric; metric["threshold"] = threshold; metric["last_updated"] = datetime.now(timezone.utc).astimezone().isoformat(); health_diff = healthmetric - threshold
                 
                 nodeStatus = self.healthStatus(metric, healthmetric, threshold)
                 metric["healthyNode"] = nodeStatus
@@ -684,7 +685,7 @@ class fogNodeCharacterisation(object):
                 # Update metric with health data
                 metric["health_metrics"] = healthmetric
                 metric["threshold"] = threshold
-                metric["last_updated"] = datetime.now().isoformat()
+                metric["last_updated"] = datetime.now(timezone.utc).astimezone().isoformat()
                 
                 health_diff = healthmetric - threshold
                 
@@ -918,7 +919,7 @@ class fogNodeCharacterisation(object):
                 # Update metric with health data
                 metric["health_metrics"] = healthmetric
                 metric["threshold"] = threshold
-                metric["last_updated"] = datetime.now().isoformat()
+                metric["last_updated"] = datetime.now(timezone.utc).astimezone().isoformat()
                 
                 health_diff = healthmetric - threshold
                 
@@ -1022,7 +1023,7 @@ class fogNodeCharacterisation(object):
                 "node_id": node_id,
                 "health_metrics": round(health, 4),
                 "threshold": round(threshold, 4),
-                "last_updated": datetime.now().isoformat(),
+                "last_updated": datetime.now(timezone.utc).astimezone().isoformat(), #"last_updated": datetime.now().isoformat(),
                 "health_status": "healthy" if health >= threshold else "faulty",
                 "healthyNode": health >= threshold
             })
