@@ -1,4 +1,5 @@
 #main.py
+import json
 import os
 import time
 from collections import defaultdict
@@ -6,6 +7,7 @@ from enum import Enum
 
 import pandas as pd
 from typing import List, Optional, Dict, Any, Tuple,    Union 
+from modules.node_operations.metrics_pre_processor import NodeMetricsProcessor
 from modules.simulation_controller import run_complete_simulation
 from logs.csv_writer import write_detailed_csv
 #import numpy as np
@@ -13,22 +15,14 @@ from modules.health_classifier import  healthMetricCalculator
 from modules.node_operations.node_generators import create_node_list
 from modules.node_operations.node_id_extract import extract_node_ids
 from modules.node_profiler import layer_profiles
+from modules.transceive.transceive_processor import NodeTransceiveProcessor
 
-"""
-Pending tasks: health_monitor, HealthMonitor
 
-"""
-try:
-    all_node_ids = extract_node_ids('data/node_list.csv')    
-except :
-    node_list_path = "data/node_list.csv"
-    if os.path.exists(node_list_path):
-        node_list = pd.read_csv(node_list_path)
-    else:
-        print("Will make an attempt to generate node_list.csv ...")
-        node_list = create_node_list()
-    all_node_ids = extract_node_ids('data/node_list.csv') 
-
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 # Configuration
 default_weights     = {'CPU': 0.3,  'RTT': 0.3,     'PLR': 0.4 } # weights must sum to 1.0
@@ -41,71 +35,103 @@ static_thresholds   = {'cpu': 0.73, 'rtt': 130.0,   'plr': 0.45 }   # Example: 7
 fault_templates = 'data/fault_templates_zero.yaml',
 fault_templates = 'data/fault_templates.yaml',
 #fault_templates = 'data/templates.yaml'
-for node in all_node_ids:
-    #try:
-        # Run simulation
-        results, injector, data_returned, history, tendency_data \
-            = run_complete_simulation(
-                node,
-                 default_weights,
-                   layer_profiles,
-                     max_values,
-                        steps=2,
-                          seed=1,
-                            fault_templates='data/fault_templates_zero.yaml')
-                            #fault_templates='data/fault_templates.yaml')
-        print(f"\nSimulation completed successfully!")
-        #print(f"Total steps: {len(results)}")
-        #print("results: ", results); time.sleep(500)
-        """for index, item in enumerate(results):
-            print("\n","node: ", node, " index: ", index, " item: ", item); time.sleep(2)"""
-        #print("results: ", results); time.sleep(1)
-        #print("tendency_data: ", tendency_data); time.sleep(5)
-        # Write detailed CSV
-        #for node_id in all_node_ids:
-        node_id = node
-        health_metric_calculator = healthMetricCalculator(
-             node_id, tendency_data, default_weights, static_thresholds
-                 )                                                  
-        health_metric = health_metric_calculator.healthMetric()
-        #print(f"Computed Health Metric for {node_id}: {health_metric}")
-        # Check if node_id exists in results    
-        """if node_id not in results:
-                print(f"Warning: Node ID '{node_id}' not found in results.")
-            else:
-                print(f"Node ID '{node_id}' found in results.")
-                """
-        # Write results to CSV
-        print("health_metric: ", health_metric); time.sleep(2)
 
-        try:
-            if df.empty:
-                print("Empty DataFrame, initializing new one.")
-                dataset = health_metric[1]
-                df = pd.DataFrame(dataset)
-            else:
-                dataset = health_metric[1]
-                new_df = pd.DataFrame(dataset)
-                df = pd.concat([df, new_df], ignore_index=True)
-        except (NameError, AttributeError):
-            dataset = health_metric[1]
-            df = pd.DataFrame(dataset)
 
-        def get_metrics_dataset():
-            """Return the collected metrics as a pandas DataFrame"""
-            return df
 
-        def save_metrics_to_csv(filename="node_metrics.csv"):
-            """Save the collected metrics to a CSV file"""
-            df = get_metrics_dataset()
-            df.to_csv(filename, index=False)
-            return df
 
-        # Save metrics to CSV
-        save_metrics_to_csv("node_metrics.csv")
 
-    #except Exception as e:
-    #    print(f"Error during simulation: {e}")
-    #    import traceback
-    #    traceback.print_exc()
+"""
+Pending tasks: health_monitor, HealthMonitor
 
+"""
+try:
+    logging.info("Attempting to extract node IDs ...")
+    all_node_ids = extract_node_ids('data/node_list.csv')    
+except :
+    logging.info("node_list.csv not found.")
+    node_list_path = "data/node_list.csv"
+    logging.info("Checking for node_list.csv at path: {}".format(node_list_path))
+    if os.path.exists(node_list_path):
+        logging("node_list.csv found. Loading node list...")
+        logging.info("Loading node_list.csv from path: {}".format(node_list_path))
+        node_list = pd.read_csv(node_list_path)
+    else:
+        logging.info("node_list.csv not found at path: {}.".format(node_list_path))
+        logging.info("Will make an attempt to generate node_list.csv ...")
+        node_list = create_node_list()
+        logging.info("node_list.csv generated successfully.")
+
+    logging.info("Saving generated node_list to data/node_list.csv ...")
+    all_node_ids = extract_node_ids('data/node_list.csv') 
+
+
+# Node Metrics Collection Processing...logging.info("Begin Node Metrics Collection Processing...")
+try:
+    node_metric_path = "data/node_metrics.csv" # should be "data/node_metrics.csv"
+    if not os.path.exists(node_metric_path):
+        # Initialise processor
+        logging.info("Begin Node Metrics Collection Processing...")
+        processor = NodeMetricsProcessor(
+                fault_template_path='data/fault_templates_zero.yaml',
+                output_filename='data/node_metrics.csv'
+            )
+        # Initialise processor
+
+        logging.info("NodeMetricsProcessor initialised successfully!")
+
+        processor.collect_node_metrics(
+                all_node_ids=all_node_ids,
+                run_complete_simulation=run_complete_simulation,
+                healthMetricCalculator=healthMetricCalculator,
+                default_weights=default_weights,
+                layer_profiles=layer_profiles,
+                max_values=max_values,
+                static_thresholds=static_thresholds,
+                steps=2,
+                seed=1
+            )
+except:
+    pass
+
+logging.info("Begin Transceive Processing...") 
+
+# Initialise processor
+transceiveprocessor = NodeTransceiveProcessor('data/node_metrics.csv')
+    
+# Transceive initialisation
+transceiveprocessor.transceive_initialisation(default_value=0)
+
+# Get summary
+logging.info("=" * 60)
+logging.info("SUMMARY")
+logging.info("=" * 60)
+summary = transceiveprocessor.get_summary()
+logging.info(
+    json.dumps(
+        summary, indent=2
+        )
+    )
+# Export as DataFrame
+print("\n" + "=" * 60)
+print("DATAFRAME OUTPUT (first 5 rows)")
+print("=" * 60)
+df = transceiveprocessor.to_dataframe()
+print(df.head())
+print(f"\nDataFrame shape: {df.shape}")
+    
+# Export as CSV
+print("\n" + "=" * 60)
+print("CSV OUTPUT")
+print("=" * 60)
+csv_path = transceiveprocessor.to_csv('data/node_metrics_with_transceive.csv')
+print(f"CSV saved to: {csv_path}")
+print("CSV created successfully!")
+
+
+    # Export as JSON
+print("\n" + "=" * 60)
+print("JSON OUTPUT (first 2 records)")
+print("=" * 60)
+json_output = transceiveprocessor.to_json()
+json_data = json.loads(json_output)
+print(json.dumps(json_data, indent=2)) #(json_data[:2], indent=2)
