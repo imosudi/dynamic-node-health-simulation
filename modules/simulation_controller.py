@@ -112,7 +112,7 @@ def run_complete_simulation(node_id: str,
     stop_on_fault : bool, default=True
         Whether to stop early when a real fault is detected.
     """
-    print("Starting Fault Injection Simulation...")
+    print("\n Starting Fault Injection ...")
     print("="*60)
 
     

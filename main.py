@@ -7,7 +7,7 @@ from enum import Enum
 
 import pandas as pd
 from typing import List, Optional, Dict, Any, Tuple,    Union 
-from modules.node_operations.metrics_pre_processor import NodeMetricsProcessor
+from modules.node_operations.metrics_processor import NodeMetricsProcessor
 from modules.simulation_controller import run_complete_simulation
 from logs.csv_writer import write_detailed_csv
 #import numpy as np
@@ -15,14 +15,11 @@ from modules.health_classifier import  healthMetricCalculator
 from modules.node_operations.node_generators import create_node_list
 from modules.node_operations.node_id_extract import extract_node_ids
 from modules.node_profiler import layer_profiles
+from modules.transceive.transceive_pre_processor import NodeTransceivePreProcessor
+
+from logs import logging
 from modules.transceive.transceive_processor import NodeTransceiveProcessor
 
-
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
 # Configuration
 default_weights     = {'CPU': 0.3,  'RTT': 0.3,     'PLR': 0.4 } # weights must sum to 1.0
@@ -96,16 +93,16 @@ except:
 logging.info("Begin Transceive Processing...") 
 
 # Initialise processor
-transceiveprocessor = NodeTransceiveProcessor('data/node_metrics.csv')
+transceive_pre_processor = NodeTransceivePreProcessor('data/node_metrics.csv')
     
 # Transceive initialisation
-transceiveprocessor.transceive_initialisation(default_value=0)
+transceive_pre_processor.transceive_initialisation(default_value=0)
 
 # Get summary
 logging.info("=" * 60)
 logging.info("SUMMARY")
 logging.info("=" * 60)
-summary = transceiveprocessor.get_summary()
+summary = transceive_pre_processor.get_summary()
 logging.info(
     json.dumps(
         summary, indent=2
@@ -115,7 +112,7 @@ logging.info(
 print("\n" + "=" * 60)
 print("DATAFRAME OUTPUT (first 5 rows)")
 print("=" * 60)
-df = transceiveprocessor.to_dataframe()
+df = transceive_pre_processor.to_dataframe()
 print(df.head())
 print(f"\nDataFrame shape: {df.shape}")
     
@@ -123,7 +120,7 @@ print(f"\nDataFrame shape: {df.shape}")
 print("\n" + "=" * 60)
 print("CSV OUTPUT")
 print("=" * 60)
-csv_path = transceiveprocessor.to_csv('data/node_metrics_with_transceive.csv')
+csv_path = transceive_pre_processor.to_csv('data/node_metrics_with_transceive.csv')
 print(f"CSV saved to: {csv_path}")
 print("CSV created successfully!")
 
@@ -132,6 +129,53 @@ print("CSV created successfully!")
 print("\n" + "=" * 60)
 print("JSON OUTPUT (first 2 records)")
 print("=" * 60)
-json_output = transceiveprocessor.to_json()
+
+json_output = transceive_pre_processor.to_json()
 json_data = json.loads(json_output)
-print(json.dumps(json_data, indent=2)) #(json_data[:2], indent=2)
+json_data_dump = json.dumps(json_data, indent=2)
+print(json_data_dump)
+
+
+# Begin Transceive Processing...
+logging.info("Begin Transceive Processing...")
+transceive_processor = NodeTransceiveProcessor(json_data_dump)
+print(transceive_processor.get_summary_stats())
+grouped = transceive_processor._default_processing()
+print(type(grouped))
+#print("Grouped Data: ", grouped);# time.sleep(200)
+print("Grouped Data Keys: ", list(grouped.keys()))
+grouped_keys = list(grouped.keys())
+
+'''grouped_keys = list(grouped.keys())
+for key in grouped_keys:
+    print(f"\nProcessing group: {key}")
+    group_data = grouped[key]
+    baseline = {'cpu': group_data[0]['cpu'], 'rtt': group_data[0]['rtt'], 'plr': group_data[0]['plr']}
+    # metric setup
+    if key == "CloudDBServer":
+        noise_scales    = layer_profiles["CLOUD"]["noise"]
+        noise_scales    = list(noise_scales.values())
+    elif key == "L1N_01":
+        noise_scales    = layer_profiles["L1"]["noise"]
+        noise_scales    = list(noise_scales.values())
+    elif key.startswith("L2N"):
+        noise_scales    = layer_profiles["L2"]["noise"]
+        noise_scales    = list(noise_scales.values())   
+    elif key.startswith("L3N"):
+        noise_scales    = layer_profiles["L3"]["noise"] 
+        noise_scales    = list(noise_scales.values())   
+    elif key.startswith("L4N"):
+        noise_scales    = layer_profiles["L4"]["noise"] 
+        noise_scales    = list(noise_scales.values())
+
+    else:
+        raise ValueError(f"Unknown node layer for {key}")
+    
+
+    """for record in group_data:
+        print(record)"""
+    #logging.info(f"\nBaseline for group {key}: {baseline} \n Noise scales: {noise_scales}")'''
+
+for key in grouped_keys: # = list(grouped.keys())
+    #logging.info(f"\nBaseline for group {key}: {baseline} \n Noise scales: {noise_scales}")
+    logging.info(transceive_processor.get_baseline_and_noise(layer_profiles, key))
