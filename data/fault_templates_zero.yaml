@@ -1,10 +1,10 @@
 # ZERO-FAULT YAML WITH CORRELATED STOCHASTIC METRICS
 # All occurrence probabilities set to 0.0, but covariance structures preserved
-# for realistic correlated metric behavior without fault injection
+# for realistic correlated metric behaviour without fault injection
 
 fault_templates:
   - id: baseline_correlation
-    name: baseline_correlated_behavior
+    name: baseline_correlated_behaviour
     type: additive
     affected_metrics: [0,1,2]
     severity_vector: [0.0, 0.0, 0.0]  # Zero severity - no actual fault
@@ -17,7 +17,7 @@ fault_templates:
     duration_dist:
       type: deterministic
       n_steps: 1  # Single step duration
-    note: "Baseline correlated metric behavior without actual faults"
+    note: "Baseline correlated metric behaviour without actual faults"
 
   - id: natural_variation_rtt_cpu
     name: natural_rtt_cpu_correlation
