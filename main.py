@@ -8,7 +8,7 @@ from enum import Enum
 import pandas as pd
 from typing import List, Optional, Dict, Any, Tuple,    Union 
 from modules.node_operations.metrics_processor import NodeMetricsProcessor
-from modules.simulation_controller import run_complete_simulation
+from modules.simulation_controller import run_simulation_initialisation
 from logs.csv_writer import write_detailed_csv
 #import numpy as np
 from modules.health_classifier import  healthMetricCalculator
@@ -18,7 +18,7 @@ from modules.node_profiler import layer_profiles
 from modules.transceive.transceive_pre_processor import NodeTransceivePreProcessor
 
 from logs import logging
-from modules.transceive.transceive_processor import NodeTransceiveProcessor
+from modules.transceive.transceive_processor import NodeTransceiveProcessor, NodeTransceiveProcessorInit #, NodeTransceiveSimulator
 
 
 # Configuration
@@ -26,7 +26,7 @@ default_weights     = {'CPU': 0.3,  'RTT': 0.3,     'PLR': 0.4 } # weights must 
 #baseline_values     = {'cpu':0.090, 'rtt': 22.8,    'plr':0.0068} # cpu expressed in fraction: x/100, rtt in milliseconds, plr in fraction: x/100   
 max_values          = {'cpu': 0.75, 'rtt': 150,     'plr': 0.5}
 static_thresholds   = {'cpu': 0.73, 'rtt': 130.0,   'plr': 0.45 }   # Example: 70% CPU usage as threshold, Example: 100ms RTT as threshold  Example: 5% packet loss rate as threshold
-
+transceive_count_limit = 20  # Maximum transceive count to consider in simulation
     
 # Fault injection templates
 fault_templates = 'data/fault_templates_zero.yaml',
@@ -61,7 +61,7 @@ except :
     logging.info("Saving generated node_list to data/node_list.csv ...")
     all_node_ids = extract_node_ids('data/node_list.csv') 
 
-
+logging.info("all_node_ids: {}".format(all_node_ids)); #time.sleep(200)
 # Node Metrics Collection Processing...logging.info("Begin Node Metrics Collection Processing...")
 try:
     node_metric_path = "data/node_metrics.csv" # should be "data/node_metrics.csv"
@@ -78,7 +78,7 @@ try:
 
         processor.collect_node_metrics(
                 all_node_ids=all_node_ids,
-                run_complete_simulation=run_complete_simulation,
+                run_simulation_initialisation=run_simulation_initialisation,
                 healthMetricCalculator=healthMetricCalculator,
                 default_weights=default_weights,
                 layer_profiles=layer_profiles,
@@ -134,48 +134,87 @@ json_output = transceive_pre_processor.to_json()
 json_data = json.loads(json_output)
 json_data_dump = json.dumps(json_data, indent=2)
 print(json_data_dump)
-
+#time.sleep(200)
 
 # Begin Transceive Processing...
 logging.info("Begin Transceive Processing...")
-transceive_processor = NodeTransceiveProcessor(json_data_dump)
+transceive_processor = NodeTransceiveProcessorInit(json_data_dump)
 print(transceive_processor.get_summary_stats())
 grouped = transceive_processor._default_processing()
-print(type(grouped))
+#print(type(grouped))
 #print("Grouped Data: ", grouped);# time.sleep(200)
-print("Grouped Data Keys: ", list(grouped.keys()))
-grouped_keys = list(grouped.keys())
+#print("Grouped Data Keys: ", list(grouped.keys()))
 
-'''grouped_keys = list(grouped.keys())
-for key in grouped_keys:
-    print(f"\nProcessing group: {key}")
-    group_data = grouped[key]
-    baseline = {'cpu': group_data[0]['cpu'], 'rtt': group_data[0]['rtt'], 'plr': group_data[0]['plr']}
-    # metric setup
-    if key == "CloudDBServer":
-        noise_scales    = layer_profiles["CLOUD"]["noise"]
-        noise_scales    = list(noise_scales.values())
-    elif key == "L1N_01":
-        noise_scales    = layer_profiles["L1"]["noise"]
-        noise_scales    = list(noise_scales.values())
-    elif key.startswith("L2N"):
-        noise_scales    = layer_profiles["L2"]["noise"]
-        noise_scales    = list(noise_scales.values())   
-    elif key.startswith("L3N"):
-        noise_scales    = layer_profiles["L3"]["noise"] 
-        noise_scales    = list(noise_scales.values())   
-    elif key.startswith("L4N"):
-        noise_scales    = layer_profiles["L4"]["noise"] 
-        noise_scales    = list(noise_scales.values())
+current_node_ids = transceive_processor._current_node_ids()
+logging.info(f"Current Node IDs 1: {current_node_ids}"); #time.sleep(200)
 
-    else:
-        raise ValueError(f"Unknown node layer for {key}")
-    
-
-    """for record in group_data:
-        print(record)"""
-    #logging.info(f"\nBaseline for group {key}: {baseline} \n Noise scales: {noise_scales}")'''
-
-for key in grouped_keys: # = list(grouped.keys())
+'''for key in current_node_ids: # = list(grouped.keys())
     #logging.info(f"\nBaseline for group {key}: {baseline} \n Noise scales: {noise_scales}")
     logging.info(transceive_processor.get_baseline_and_noise(layer_profiles, key))
+
+    #time.sleep(20)'''
+
+print("json_data_dump: ", json_data_dump); #time.sleep(200)
+init_processor = NodeTransceiveProcessorInit(json_data_dump)
+
+'''print(init_processor.get_summary_stats())
+grouped = init_processor._default_processing()
+print("init_processor summary: ", init_processor._current_node_ids()); #time.sleep(200)
+simulator = NodeTransceiveSimulator(init_processor, layer_profiles, transceive_count_limit)
+sim_output, summary = simulator.run_complete_simulation()'''
+
+#time.sleep(200)
+#print(json.dumps(sim_output, indent=2))
+#print(json.dumps(summary, indent=2)); #time.sleep(200)
+
+
+'''for key in current_node_ids:
+    undetermined_responses = simulator.collate_transcieve_inputs(
+        key,
+        #processor,
+        #layer_profiles, 
+        #max_values,
+        #transceive_count_limit,
+        #steps=2,
+        #seed=1,
+        #fault_templates='data/fault_templates.yaml'
+    )
+    logging.info(f"Undetermined responses for node {key}: {undetermined_responses}")'''
+
+'''results, injector, data_returned, history, tendency_data = run_simulation_initialisation(
+                    node,
+                    default_weights,
+                    layer_profiles,
+                    max_values,
+                    steps=steps,
+                    seed=seed,
+                    fault_templates=self.fault_template_path
+                )
+'''""" all_node_ids=all_node_ids,
+                run_simulation_initialisation=run_simulation_initialisation,
+                healthMetricCalculator=healthMetricCalculator,
+                default_weights=default_weights,
+                layer_profiles=layer_profiles,
+                max_values=max_values,
+                static_thresholds=static_thresholds,
+                steps=2,
+                seed=1"""
+print("json_data_dump: ", json_data_dump); #time.sleep(200)
+
+transceive_processor = NodeTransceiveProcessorInit(json_data_dump)
+current_node_ids = transceive_processor._current_node_ids()
+logging.info(f"Current Node IDs 2: {current_node_ids}"); #time.sleep(200)
+
+
+transceive_processor = NodeTransceiveProcessorInit(json_data_dump); #time.sleep(200)
+current_node_ids = transceive_processor._current_node_ids()
+logging.info(f"Current Node IDs: {current_node_ids}"); #time.sleep(200)
+
+print("json_data_dump: ", json_data_dump); #time.sleep(200)
+for i in range(5):
+    node_trransceive_processor  = NodeTransceiveProcessor(layer_profiles, json_data_dump)
+    process_transmission_nodes  = node_trransceive_processor.process_to_json()
+
+    json_data = json.loads(process_transmission_nodes)
+    json_data_dump = json.dumps(json_data, indent=2)
+    print(json_data_dump)

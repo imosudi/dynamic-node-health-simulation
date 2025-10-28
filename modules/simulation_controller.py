@@ -84,7 +84,7 @@ class HealthMonitor:
 
         return h, self.theta, status
 
-def run_complete_simulation(node_id: str,
+def run_simulation_initialisation(node_id: str,
                             default_weights,
                             layer_profiles: dict,
                             max_values: dict,

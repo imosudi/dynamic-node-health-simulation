@@ -115,7 +115,8 @@ class healthMetricCalculator:
         health_difference   = h - health_threshold
         health_status       = "HEALTHY" if h <= health_threshold else "FAULTY"
         anomaly_type        = "NONE"
-        current_time        = datetime.now(timezone.utc)
+        #current_time        = datetime.now(timezone.utc)
+        current_time        = datetime.now().astimezone()
         # Store metrics in dataset
         self.dataset['timestamp'].append(current_time)
         self.dataset['node_id'].append(node_id)

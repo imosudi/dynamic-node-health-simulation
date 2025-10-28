@@ -81,7 +81,7 @@ class NodeMetricsProcessor:
     def collect_node_metrics(
         self,
         all_node_ids: List[str],
-        run_complete_simulation: Callable[..., Tuple[Any, ...]],
+        run_simulation_initialisation: Callable[..., Tuple[Any, ...]],
         healthMetricCalculator: Callable[..., Any],
         default_weights: Dict[str, Any],
         layer_profiles: Dict[str, Any],
@@ -95,7 +95,7 @@ class NodeMetricsProcessor:
 
         Args:
             all_node_ids: List of node IDs to process.
-            run_complete_simulation: Function to execute the node simulation.
+            run_simulation_initialisation: Function to execute the node simulation.
             healthMetricCalculator: Callable class to compute health metrics.
             default_weights: Default weight configuration.
             layer_profiles: Layer profile configuration.
@@ -120,7 +120,7 @@ class NodeMetricsProcessor:
             try:
                 self.logger.info(f"Processing node {idx}/{total_nodes}: {node}")
 
-                results, injector, data_returned, history, tendency_data = run_complete_simulation(
+                results, injector, data_returned, history, tendency_data = run_simulation_initialisation(
                     node,
                     default_weights,
                     layer_profiles,
@@ -239,7 +239,7 @@ if 1==2:
     """
     processor.collect_node_metrics(
         all_node_ids=all_node_ids,
-        run_complete_simulation=run_complete_simulation,
+        run_simulation_initialisation=run_simulation_initialisation,
         healthMetricCalculator=healthMetricCalculator,
         default_weights=default_weights,
         layer_profiles=layer_profiles,

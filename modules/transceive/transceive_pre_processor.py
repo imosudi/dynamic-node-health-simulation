@@ -8,6 +8,7 @@ modules/transceive/transceive_processor.py
 import csv
 import json
 import os
+import time
 from typing import Dict, List, Optional
 import pandas as pd
 
@@ -83,18 +84,21 @@ class NodeTransceivePreProcessor:
             Self for method chaining
         """
         if 'transceive_count' not in self.columns:
-            for item in ['transceive_count', "plr_mean", "plr_std", "rtt_mean", "rtt_std", "cpu_mean", "cpu_std"]:
+            for item in ['transceive_count', "plr_mean", "plr_std", "rtt_mean", "rtt_std", "cpu_mean", "cpu_std", "plr_x-x^", "rtt_x-x^", "cpu_x-x^"]:
                 self.columns.append(item)
         
         for row in self.data:
             row['transceive_count'] = str(default_value)
-            """row['plr_mean'] = row['plr']
-            row['plr_std'] = '0.0'
+            row['plr_mean'] = row['plr']
             row['rtt_mean'] = row['rtt']
-            row['rtt_std'] = '0.0'
             row['cpu_mean'] = row['cpu']
-            row['cpu_std'] = '0.0'  """
-        
+            row['plr_std'] = '0.0'
+            row['rtt_std'] = '0.0'
+            row['cpu_std'] = '0.0' 
+            row['plr_x-x^'] = '0.0'
+            row['rtt_x-x^'] = '0.0'
+            row['cpu_x-x^'] = '0.0' 
+
         return self
     
     def to_json(self, indent: int = 2) -> str:
@@ -107,6 +111,8 @@ class NodeTransceivePreProcessor:
         Returns:
             JSON string representation of the data
         """
+
+        #print("self.data:, ", self.data); time.sleep(200)
         return json.dumps(self.data, indent=indent)
     
     def to_dataframe(self) -> pd.DataFrame:
