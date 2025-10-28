@@ -46,7 +46,7 @@ dynamic-node-health-simulation/
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/yourusername/dynamic-node-health-simulation.git
+git clone https://github.com/imosudi/dynamic-node-health-simulation.git
 cd dynamic-node-health-simulation
 ```
 
