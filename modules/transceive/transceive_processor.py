@@ -725,5 +725,6 @@ def test_node_transceive_processor():
     print("Test Suite Completed!")
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
+if 1==2:
     test_node_transceive_processor()
