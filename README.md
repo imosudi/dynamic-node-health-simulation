@@ -17,7 +17,7 @@ This project simulates node health degradation in a hierarchical fog computing n
 ## Project Structure
 ```
 dynamic-node-health-simulation/
-├── data                                 --> Auto-generated node_list.csv
+├── data                                 --> Fault YAML Templates, Auto-generated node_list.csv
 │   ├── fault_templates.yaml
 │   ├── fault_templates_zero.yaml
 │   └── templates.yaml
